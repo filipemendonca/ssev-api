@@ -3,6 +3,9 @@ import { hash } from "bcrypt";
 import { Role } from "@prisma/client";
 import { PrismaService } from "./prisma.service";
 
+import * as dotenv from "dotenv";
+dotenv.config();
+
 async function main() {
   const prisma = new PrismaService();
 
