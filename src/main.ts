@@ -2,6 +2,8 @@ import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import * as dotenv from "dotenv";
 import * as path from "path";
+import { AllExceptionsFilter } from "./common/filters/http-exception.filter";
+import { LoggingInterceptor } from "./common/interceptors/logging.interceptors";
 
 async function bootstrap() {
   const envFile =
@@ -10,6 +12,9 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   await app.listen(3000);
+
+  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   app.enableCors();
 }

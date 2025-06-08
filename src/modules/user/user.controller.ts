@@ -7,41 +7,71 @@ import {
   Param,
   Body,
   UseGuards,
+  NotFoundException,
 } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/guards/auth.guard";
 import { UserService } from "./user.service";
 import { UserDto } from "./dto/user.dto";
+import { SuccessResponse } from "../../common/dto/response.dto";
 
 @UseGuards(JwtAuthGuard)
 @Controller("users")
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly service: UserService) {}
 
   @Get()
-  async findAll(): Promise<UserDto[]> {
-    return await this.userService.findAll();
+  async findAll(): Promise<SuccessResponse<UserDto[]>> {
+    const data = await this.service.findAll();
+    return new SuccessResponse<UserDto[]>(data);
   }
 
   @Get(":id")
-  async findOne(@Param("id") id: string): Promise<UserDto | null> {
-    return this.userService.findOne(id);
+  async findOne(@Param("id") id: string): Promise<SuccessResponse<UserDto>> {
+    const data = await this.service.findOne(id);
+
+    if (!data) {
+      throw new NotFoundException(`Usuário não encontrado.`);
+    }
+
+    return new SuccessResponse<UserDto>(data);
   }
 
   @Post()
-  async create(@Body() data: UserDto): Promise<UserDto> {
-    return this.userService.create(data);
+  async create(@Body() data: UserDto): Promise<SuccessResponse<UserDto>> {
+    const newUser = await this.service.create(data);
+
+    if (newUser === null) {
+      throw new NotFoundException(`Erro ao criar usuário.`);
+    }
+
+    return new SuccessResponse<UserDto>(newUser, "Usuário criado com sucesso.");
   }
 
   @Put(":id")
   async update(
     @Param("id") id: string,
     @Body() data: UserDto
-  ): Promise<UserDto> {
-    return this.userService.update(id, data);
+  ): Promise<SuccessResponse<UserDto>> {
+    const existingData = await this.service.findOne(id);
+
+    if (!existingData) {
+      throw new NotFoundException(`Usuário não encontrado.`);
+    }
+
+    return new SuccessResponse<UserDto>(
+      await this.service.update(id, data),
+      "Usuário atualizado com sucesso."
+    );
   }
 
   @Delete(":id")
-  async delete(@Param("id") id: string) {
-    return this.userService.delete(id);
+  async delete(@Param("id") id: string): Promise<SuccessResponse<UserDto>> {
+    const existingData = await this.service.findOne(id);
+
+    if (!existingData) {
+      throw new NotFoundException(`Usuário não encontrado.`);
+    }
+
+    return new SuccessResponse<UserDto>(await this.service.delete(id));
   }
 }
