@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { PaginationQueryDto } from "./dto/pagination-query.dto";
 
 export class BaseRepository<T> {
   protected readonly model: any;
@@ -10,8 +11,18 @@ export class BaseRepository<T> {
     this.model = modelAccessor(prisma);
   }
 
-  async findAll(params?: any): Promise<T[]> {
-    return this.model.findMany(params);
+  async findAll(pagination: PaginationQueryDto) {
+    const { limit, offset } = pagination;
+
+    const [items, total] = await Promise.all([
+      this.model.findMany({
+        skip: offset,
+        take: limit,
+      }),
+      this.model.count(),
+    ]);
+
+    return { items, total };
   }
 
   async findOne(params: any): Promise<T | null> {

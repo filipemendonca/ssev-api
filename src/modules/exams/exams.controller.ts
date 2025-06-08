@@ -7,12 +7,14 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseGuards,
 } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/guards/auth.guard";
 import { ExamsService } from "./exams.service";
 import { ExamsDto } from "./dto/exams.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
+import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 
 @UseGuards(JwtAuthGuard)
 @Controller("exams")
@@ -20,9 +22,16 @@ export class ExamsController {
   constructor(private readonly service: ExamsService) {}
 
   @Get()
-  async findAll(): Promise<SuccessResponse<ExamsDto[]>> {
-    const exams = await this.service.findAll();
-    return new SuccessResponse<ExamsDto[]>(exams);
+  async findAll(
+    @Query() query: PaginationQueryDto
+  ): Promise<SuccessResponse<ExamsDto[]>> {
+    const { data } = await this.service.findAll(query);
+
+    if (data.length === 0) {
+      throw new NotFoundException(`Nenhum registro encontrado.`);
+    }
+
+    return this.service.findAll(query);
   }
 
   @Get(":id")
