@@ -1,13 +1,24 @@
 import { Injectable } from "@nestjs/common";
 import { ExamsRepository } from "./exams.repository";
 import { ExamsDto } from "./dto/exams.dto";
+import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
+import { SuccessResponse } from "../../common/dto/response.dto";
 
 @Injectable()
 export class ExamsService {
   constructor(private readonly repo: ExamsRepository) {}
 
-  public async findAll(): Promise<ExamsDto[]> {
-    return await this.repo.findAll();
+  public async findAll(
+    pagination: PaginationQueryDto
+  ): Promise<SuccessResponse<ExamsDto[]>> {
+    const { items, total } = await this.repo.findAll(pagination);
+
+    return new SuccessResponse(items, null, {
+      total,
+      limit: pagination.limit,
+      offset: pagination.offset,
+      hasNextPage: pagination.offset + pagination.limit < total,
+    });
   }
 
   public async findOne(id: string): Promise<ExamsDto | null> {

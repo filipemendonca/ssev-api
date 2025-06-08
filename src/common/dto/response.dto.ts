@@ -1,11 +1,15 @@
+import { PaginationQueryDto } from "./pagination-query.dto";
+
 export class SuccessResponse<T> {
   success = true as const;
   data: T;
   message?: string;
+  meta?: PaginationQueryDto;
 
-  constructor(data: T, message?: string) {
+  constructor(data: T, message?: string, meta?: PaginationQueryDto) {
     this.data = data;
     if (message) this.message = message;
+    if (meta) this.meta = meta;
   }
 }
 
