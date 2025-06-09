@@ -12,13 +12,15 @@ export class UserService {
   public async findAll(
     pagination: PaginationQueryDto
   ): Promise<SuccessResponse<UserDto[]>> {
-    const { items, total } = await this.userRepo.findAll(pagination);
+    const { items, total, hasNextPage, totalPages } =
+      await this.userRepo.findAll(pagination);
 
     return new SuccessResponse(items, null, {
       total,
       limit: pagination.limit,
-      offset: pagination.offset,
-      hasNextPage: pagination.offset + pagination.limit < total,
+      currentPage: pagination.currentPage,
+      totalPages,
+      hasNextPage,
     });
   }
 

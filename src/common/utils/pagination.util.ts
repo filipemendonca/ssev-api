@@ -13,18 +13,19 @@ export async function paginate<T>(
     select?: any;
   },
   limit = 10,
-  offset = 0
+  currentPage = 1
 ): Promise<SuccessResponse<T[]>> {
+  const skip = (currentPage - 1) * limit;
   const [data, total] = await Promise.all([
-    model.findMany({ ...args, skip: offset, take: limit }),
+    model.findMany({ ...args, skip: skip, take: limit }),
     model.count({ where: args.where }),
   ]);
 
   const meta = {
     total,
     limit,
-    offset,
-    hasNextPage: offset + limit < total,
+    currentPage,
+    hasNextPage: skip + limit < total,
   };
 
   return new SuccessResponse(data, "Listagem realizada com sucesso", meta);

@@ -12,17 +12,24 @@ export class BaseRepository<T> {
   }
 
   async findAll(pagination: PaginationQueryDto) {
-    const { limit, offset } = pagination;
+    const { limit, currentPage } = pagination;
+
+    const skip = (currentPage - 1) * limit;
 
     const [items, total] = await Promise.all([
       this.model.findMany({
-        skip: offset,
+        skip: skip,
         take: limit,
       }),
       this.model.count(),
     ]);
 
-    return { items, total };
+    const totalPages = Math.ceil(total / limit);
+    const hasNextPage =
+      (pagination.currentPage - 1) * pagination.limit + pagination.limit <
+      total;
+
+    return { items, total, totalPages, hasNextPage };
   }
 
   async findOne(params: any): Promise<T | null> {

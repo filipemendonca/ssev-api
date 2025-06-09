@@ -9,8 +9,13 @@ export class PaginationQueryDto {
 
   @IsOptional()
   @Type(() => Number)
-  @Min(0)
-  offset?: number = 0;
+  @IsPositive()
+  currentPage?: number = 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsPositive()
+  totalPages?: number = 1;
 
   @IsOptional()
   @Type(() => Number)

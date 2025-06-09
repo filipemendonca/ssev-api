@@ -11,13 +11,15 @@ export class SolicitationService {
   public async findAll(
     pagination: PaginationQueryDto
   ): Promise<SuccessResponse<SolicitationDto[]>> {
-    const { items, total } = await this.repo.findAll(pagination);
+    const { items, total, hasNextPage, totalPages } =
+      await this.repo.findAll(pagination);
 
     return new SuccessResponse(items, null, {
       total,
       limit: pagination.limit,
-      offset: pagination.offset,
-      hasNextPage: pagination.offset + pagination.limit < total,
+      currentPage: pagination.currentPage,
+      totalPages,
+      hasNextPage,
     });
   }
 
