@@ -16,7 +16,7 @@ import { UserDto } from "./dto/user.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { PaginationQueryDto } from "src/common/dto/pagination-query.dto";
 
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 @Controller("users")
 export class UserController {
   constructor(private readonly service: UserService) {}

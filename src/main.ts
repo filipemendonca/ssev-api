@@ -15,11 +15,11 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
-  await app.listen(3000);
-
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new LoggingInterceptor());
 
-  app.enableCors();
+  app.enableCors({ origin: "*" });
+
+  await app.listen(4000);
 }
 bootstrap();
