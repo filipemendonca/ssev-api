@@ -16,7 +16,7 @@ import { ExamsDto } from "./dto/exams.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 @Controller("exams")
 export class ExamsController {
   constructor(private readonly service: ExamsService) {}
