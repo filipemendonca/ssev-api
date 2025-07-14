@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { hash } from "bcrypt";
 import { UserRepository } from "./user.repository";
 import { UserDto } from "./dto/user.dto";
@@ -37,6 +37,19 @@ export class UserService {
   }
 
   public async create(data: UserDto): Promise<UserDto> {
+    const hasUsername = await this.userRepo.validateIfHasUsername(
+      data.username
+    );
+    const hasEmail = await this.userRepo.validateIfHasEmail(data.email);
+
+    if (hasUsername !== 0) {
+      throw new UnprocessableEntityException("Username já está em uso.");
+    }
+
+    if (hasEmail !== 0) {
+      throw new UnprocessableEntityException("Este e-mail já está em uso.");
+    }
+
     data.password = await hash(data.password, 10);
     return this.userRepo.create(data);
   }
