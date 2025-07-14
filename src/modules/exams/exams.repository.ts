@@ -8,4 +8,8 @@ export class ExamsRepository extends BaseRepository<Exams> {
   constructor(prisma: PrismaService) {
     super(prisma, (p) => p.exams);
   }
+
+  public async validateIfHasName(name: string): Promise<number> {
+    return await this.prisma.exams.count({ where: { name } });
+  }
 }

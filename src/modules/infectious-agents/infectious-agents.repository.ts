@@ -8,4 +8,8 @@ export class InfectiousAgentsRepository extends BaseRepository<InfectiousAgents>
   constructor(prisma: PrismaService) {
     super(prisma, (p) => p.infectiousAgents);
   }
+
+  public async validateIfHasName(name: string): Promise<number> {
+    return await this.prisma.infectiousAgents.count({ where: { name } });
+  }
 }

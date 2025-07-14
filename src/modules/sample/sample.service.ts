@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { SampleRepository } from "./sample.repository";
 import { SampleDto } from "./dto/sample.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
@@ -28,7 +28,15 @@ export class SampleService {
   }
 
   public async create(data: SampleDto): Promise<SampleDto> {
-    return this.repo.create(data);
+    const validateInputData = await this.repo.validateIfHasName(data.name);
+
+    if (validateInputData !== 0) {
+      throw new UnprocessableEntityException(
+        "Já existe um registro com o mesmo nome."
+      );
+    }
+
+    return await this.repo.create(data);
   }
 
   public async update(id: string, data: SampleDto): Promise<SampleDto> {

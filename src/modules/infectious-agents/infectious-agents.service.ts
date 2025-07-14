@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { InfectiousAgentsRepository } from "./infectious-agents.repository";
 import { InfectiousAgentsDto } from "./dto/infectious-agents.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
@@ -23,19 +23,26 @@ export class InfectiousAgentsService {
     });
   }
 
-  findOne(id: string) {
-    return this.repo.findById(id);
+  public async findOne(id: string) {
+    return await this.repo.findById(id);
   }
 
-  create(data: InfectiousAgentsDto) {
-    return this.repo.create(data);
+  public async create(data: InfectiousAgentsDto) {
+    const validateInputData = await this.repo.validateIfHasName(data.name);
+
+    if (validateInputData !== 0) {
+      throw new UnprocessableEntityException(
+        "Já existe um registro com o mesmo nome."
+      );
+    }
+    return await this.repo.create(data);
   }
 
-  update(id: string, data: InfectiousAgentsDto) {
-    return this.repo.update(id, data);
+  public async update(id: string, data: InfectiousAgentsDto) {
+    return await this.repo.update(id, data);
   }
 
-  delete(id: string) {
-    return this.repo.delete(id);
+  public async delete(id: string) {
+    return await this.repo.delete(id);
   }
 }
