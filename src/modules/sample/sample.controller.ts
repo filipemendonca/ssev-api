@@ -12,11 +12,12 @@ import {
 } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/guards/auth.guard";
 import { SampleService } from "./sample.service";
-import { SampleDto } from "./dto/sample.dto";
+import { SampleDto, SampleFilterDto } from "./dto/sample.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 
 // @UseGuards(JwtAuthGuard)
+
 @Controller("sample")
 export class SampleController {
   constructor(private readonly service: SampleService) {}
@@ -36,13 +37,26 @@ export class SampleController {
 
   @Get(":id")
   async findOne(@Param("id") id: string): Promise<SuccessResponse<SampleDto>> {
-    const sample = await this.service.findOne(id);
+    const sample = await this.service.findById(id);
 
     if (!sample) {
       throw new NotFoundException(`Amostra não encontrada.`);
     }
 
     return new SuccessResponse<SampleDto>(sample);
+  }
+
+  @Post("/findMany")
+  async findMany(
+    @Body() filter: SampleFilterDto
+  ): Promise<SuccessResponse<SampleDto[]>> {
+    const sample = await this.service.findByName(filter);
+
+    if (!sample) {
+      throw new NotFoundException(`Amostra não encontrada.`);
+    }
+
+    return new SuccessResponse<SampleDto[]>(sample);
   }
 
   @Post()
@@ -64,7 +78,7 @@ export class SampleController {
     @Param("id") id: string,
     @Body() data: SampleDto
   ): Promise<SuccessResponse<SampleDto>> {
-    const existingSample = await this.service.findOne(id);
+    const existingSample = await this.service.findById(id);
 
     if (!existingSample) {
       throw new NotFoundException(`Amostra não encontrada.`);
@@ -78,7 +92,7 @@ export class SampleController {
 
   @Delete(":id")
   async delete(@Param("id") id: string): Promise<SuccessResponse<SampleDto>> {
-    const existingSample = await this.service.findOne(id);
+    const existingSample = await this.service.findById(id);
 
     if (!existingSample) {
       throw new NotFoundException(`Amostra não encontrada.`);

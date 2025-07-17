@@ -1,6 +1,6 @@
 import { Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { SampleRepository } from "./sample.repository";
-import { SampleDto } from "./dto/sample.dto";
+import { SampleDto, SampleFilterDto } from "./dto/sample.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 
@@ -23,8 +23,14 @@ export class SampleService {
     });
   }
 
-  public async findOne(id: string): Promise<SampleDto | null> {
+  public async findById(id: string): Promise<SampleDto | null> {
     return await this.repo.findById(id);
+  }
+
+  public async findByName(
+    filter: SampleFilterDto
+  ): Promise<SampleDto[] | null> {
+    return await this.repo.findByName(filter.name);
   }
 
   public async create(data: SampleDto): Promise<SampleDto> {

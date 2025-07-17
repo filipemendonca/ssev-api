@@ -18,6 +18,14 @@ export class BaseRepository<T> {
 
     const [items, total] = await Promise.all([
       this.model.findMany({
+        orderBy: [
+          {
+            createdAt: "desc",
+          },
+          {
+            updatedAt: "desc",
+          },
+        ],
         skip: skip,
         take: limit,
       }),
@@ -38,6 +46,10 @@ export class BaseRepository<T> {
 
   async findById(id: string): Promise<T | null> {
     return this.model.findUnique({ where: { id } });
+  }
+
+  async findMany(params: any): Promise<T | null> {
+    return await this.model.findMany(params);
   }
 
   async create(data: Partial<T>): Promise<T> {
