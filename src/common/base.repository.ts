@@ -12,12 +12,13 @@ export class BaseRepository<T> {
   }
 
   async findAll(pagination: PaginationQueryDto) {
-    const { limit, currentPage } = pagination;
+    const { limit, currentPage, name } = pagination;
 
     const skip = (currentPage - 1) * limit;
 
     const [items, total] = await Promise.all([
       this.model.findMany({
+        where: name ? { name: { contains: name, mode: "insensitive" } } : {},
         orderBy: [
           {
             createdAt: "desc",

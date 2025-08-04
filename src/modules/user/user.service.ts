@@ -50,7 +50,10 @@ export class UserService {
       throw new UnprocessableEntityException("Este e-mail já está em uso.");
     }
 
-    data.password = await hash(data.password, 10);
+    data.password = data.password
+      ? await hash(data.password, 10)
+      : await hash("123456", 10);
+
     return this.userRepo.create(data);
   }
 

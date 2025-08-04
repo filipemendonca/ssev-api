@@ -25,4 +25,8 @@ export class PaginationQueryDto {
   @IsOptional()
   @Type(() => Boolean)
   hasNextPage?: boolean = false;
+
+  @IsOptional()
+  @Type(() => String)
+  name?: string = "";
 }
