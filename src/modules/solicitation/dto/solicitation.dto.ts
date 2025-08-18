@@ -5,14 +5,14 @@ export class SolicitationDto {
   tutor: string;
   patient: string;
   gender: string;
-  age: number;
+  age: string;
   doctor: string;
-  species: string;
+  specie: string;
   hospitalVet: string;
   bloodCollectionTubeColor: BloodCollectionTubeColor;
   infectiousAgents: string[];
-  sampleId: string;
-  examsId: string;
+  samples: string[];
+  exams: string[];
   status: SolicitationStatus;
   finishedAt: Date;
   canceledAt: Date;

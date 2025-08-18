@@ -36,6 +36,11 @@ enum SolicitationStatus {
   CANCELADO  
 }
 
+enum ExamResultType {
+  PCR_QUALITATIVO
+  PCR_QUANTITATIVO
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String?
@@ -52,16 +57,14 @@ model Sample {
   id        String   @id @default(cuid())
   name      String?  @unique
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  solicitations Solicitation[]
+  updatedAt DateTime @updatedAt  
 }
 
 model Exams {
   id        String   @id @default(cuid())
   name      String?  @unique
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt  
-  solicitations Solicitation[]
+  updatedAt DateTime @updatedAt    
 }
 
 model InfectiousAgents {
@@ -76,21 +79,23 @@ model Solicitation {
   tutor      String?  
   patient    String?
   gender     String?
-  age        Int?
+  age        String?
   doctor     String?
-  species   String?
+  specie   String?
   hospitalVet   String?  
   infectiousAgents String[]
-  sampleId String?
-  examsId String?
+  samples String[]
+  exams String[]
   status     SolicitationStatus @default(CRIADO)
   finishedAt DateTime?
   canceledAt DateTime?
+  canceledCause String?
+  blockedAt DateTime?
+  blockedCause String?
+  examResultType ExamResultType? @default(PCR_QUALITATIVO)
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  bloodCollectionTubeColor BloodCollectionTubeColor? @default(TAMPA_ROXA)
-  exams      Exams? @relation(fields: [examsId], references: [id])
-  sample     Sample? @relation(fields: [sampleId], references: [id])  
+  updatedAt  DateTime @updatedAt  
+  bloodCollectionTubeColor BloodCollectionTubeColor? @default(TAMPA_ROXA)    
 }
 
 
