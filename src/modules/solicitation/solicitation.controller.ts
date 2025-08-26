@@ -16,7 +16,7 @@ import { SolicitationDto } from "./dto/solicitation.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 
-// @UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 @Controller("solicitation")
 export class SolicitationController {
   constructor(private readonly service: SolicitationService) {}

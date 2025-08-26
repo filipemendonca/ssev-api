@@ -16,8 +16,7 @@ import { SampleDto, SampleFilterDto } from "./dto/sample.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 
-// @UseGuards(JwtAuthGuard)
-
+@UseGuards(JwtAuthGuard)
 @Controller("sample")
 export class SampleController {
   constructor(private readonly service: SampleService) {}

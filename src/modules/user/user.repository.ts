@@ -9,10 +9,6 @@ export class UserRepository extends BaseRepository<User> {
     super(prisma, (p) => p.user);
   }
 
-  public async validateIfHasUsername(username: string): Promise<number> {
-    return await this.prisma.user.count({ where: { username } });
-  }
-
   public async validateIfHasEmail(email: string): Promise<number> {
     return await this.prisma.user.count({ where: { email } });
   }

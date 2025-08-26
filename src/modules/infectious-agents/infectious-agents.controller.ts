@@ -16,7 +16,7 @@ import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { InfectiousAgentsService } from "./infectious-agents.service";
 import { InfectiousAgentsDto } from "./dto/infectious-agents.dto";
 
-// @UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 @Controller("infectious-agents")
 export class InfectiousAgentsController {
   constructor(private readonly service: InfectiousAgentsService) {}

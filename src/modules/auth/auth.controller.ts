@@ -1,22 +1,75 @@
-import { Controller, Post, Body } from "@nestjs/common";
+import {
+  Controller,
+  Post,
+  Body,
+  Res,
+  HttpCode,
+  HttpStatus,
+  Req,
+} from "@nestjs/common";
+import { Response, Request } from "express";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 
 @Controller("auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-
   @Post("login")
-  async login(@Body() dto: LoginDto) {
-    const user = await this.authService.validateUser(
-      dto.username,
-      dto.password
-    );
-    return this.authService.login(user);
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const user = await this.authService.validateUser(dto.email, dto.password);
+    const { access_token, refresh_token } = await this.authService.login(user);
+
+    res.cookie("refresh_token", refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 dias
+    });
+
+    return { access_token };
   }
 
-  //   @Post('register')
-  //   async register(@Body() dto: RegisterDto) {
-  //     return this.authService.register(dto);
-  //   }
+  @Post("refresh")
+  @HttpCode(HttpStatus.OK)
+  async refresh(@Req() req: Request, @Res() res: Response) {
+    const refreshToken = req.cookies["refresh_token"];
+    if (!refreshToken) {
+      return res
+        .status(HttpStatus.UNAUTHORIZED)
+        .json({ error: "No refresh token" });
+    }
+
+    const {
+      accessToken,
+      refreshToken: newRefreshToken,
+      user,
+    } = await this.authService.refreshTokens(refreshToken);
+
+    // Atualiza cookie do refresh token
+    res.cookie("refresh_token", newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/auth/refresh",
+    });
+
+    return res.json({ access_token: accessToken, user });
+  }
+
+  @Post("logout")
+  async logout(@Res({ passthrough: true }) res: Response) {
+    // Remove o cookie refresh_token
+    res.clearCookie("refresh_token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+    });
+
+    return { message: "Logout efetuado com sucesso" };
+  }
 }

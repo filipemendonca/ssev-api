@@ -28,23 +28,16 @@ export class UserService {
     return await this.userRepo.findById(id);
   }
 
-  public async findBy(username?: string): Promise<UserDto> {
+  public async findBy(email?: string): Promise<UserDto> {
     return await this.userRepo.findOne({
       where: {
-        username: username,
+        email: email,
       },
     });
   }
 
   public async create(data: UserDto): Promise<UserDto> {
-    const hasUsername = await this.userRepo.validateIfHasUsername(
-      data.username
-    );
     const hasEmail = await this.userRepo.validateIfHasEmail(data.email);
-
-    if (hasUsername !== 0) {
-      throw new UnprocessableEntityException("Username já está em uso.");
-    }
 
     if (hasEmail !== 0) {
       throw new UnprocessableEntityException("Este e-mail já está em uso.");
