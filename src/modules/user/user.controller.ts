@@ -14,10 +14,14 @@ import { JwtAuthGuard } from "../auth/guards/auth.guard";
 import { UserService } from "./user.service";
 import { UserDto } from "./dto/user.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
-import { PaginationQueryDto } from "src/common/dto/pagination-query.dto";
+import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
+import { RolesGuard } from "../auth/guards/roles.guard";
+import { Role } from "@prisma/client";
+import { Roles } from "../../common/decorators/roles.decorator";
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("users")
+@Roles(Role.ADMINISTRADOR)
 export class UserController {
   constructor(private readonly service: UserService) {}
 

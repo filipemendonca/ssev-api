@@ -10,6 +10,7 @@ import {
 import { Response, Request } from "express";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
+import { UserDto } from "../user/dto/user.dto";
 
 @Controller("auth")
 export class AuthController {
@@ -20,7 +21,9 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response
   ) {
     const user = await this.authService.validateUser(dto.email, dto.password);
-    const { access_token, refresh_token } = await this.authService.login(user);
+    const { access_token, refresh_token } = await this.authService.login(
+      user as UserDto
+    );
 
     const userRefined = {
       id: user.id,

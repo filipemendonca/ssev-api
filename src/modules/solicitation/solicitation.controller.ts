@@ -15,9 +15,13 @@ import { SolicitationService } from "./solicitation.service";
 import { SolicitationDto } from "./dto/solicitation.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
+import { RolesGuard } from "../auth/guards/roles.guard";
+import { Role } from "@prisma/client";
+import { Roles } from "../../common/decorators/roles.decorator";
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("solicitation")
+@Roles(Role.ADMINISTRADOR)
 export class SolicitationController {
   constructor(private readonly service: SolicitationService) {}
 

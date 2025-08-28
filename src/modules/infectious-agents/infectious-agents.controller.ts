@@ -15,9 +15,13 @@ import { SuccessResponse } from "../../common/dto/response.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { InfectiousAgentsService } from "./infectious-agents.service";
 import { InfectiousAgentsDto } from "./dto/infectious-agents.dto";
+import { RolesGuard } from "../auth/guards/roles.guard";
+import { Role } from "@prisma/client";
+import { Roles } from "../../common/decorators/roles.decorator";
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("infectious-agents")
+@Roles(Role.ADMINISTRADOR)
 export class InfectiousAgentsController {
   constructor(private readonly service: InfectiousAgentsService) {}
 

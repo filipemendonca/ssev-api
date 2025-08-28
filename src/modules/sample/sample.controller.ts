@@ -15,9 +15,13 @@ import { SampleService } from "./sample.service";
 import { SampleDto, SampleFilterDto } from "./dto/sample.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
+import { Roles } from "../../common/decorators/roles.decorator";
+import { Role } from "@prisma/client";
+import { RolesGuard } from "../auth/guards/roles.guard";
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("sample")
+@Roles(Role.ADMINISTRADOR)
 export class SampleController {
   constructor(private readonly service: SampleService) {}
 

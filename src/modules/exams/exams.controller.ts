@@ -10,14 +10,18 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { JwtAuthGuard } from "../auth/guards/auth.guard";
-import { ExamsService } from "./exams.service";
-import { ExamsDto } from "./dto/exams.dto";
-import { SuccessResponse } from "../../common/dto/response.dto";
+import { Role } from "@prisma/client";
+import { Roles } from "../../common/decorators/roles.decorator";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
+import { SuccessResponse } from "../../common/dto/response.dto";
+import { JwtAuthGuard } from "../auth/guards/auth.guard";
+import { RolesGuard } from "../auth/guards/roles.guard";
+import { ExamsDto } from "./dto/exams.dto";
+import { ExamsService } from "./exams.service";
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("exams")
+@Roles(Role.ADMINISTRADOR)
 export class ExamsController {
   constructor(private readonly service: ExamsService) {}
 
