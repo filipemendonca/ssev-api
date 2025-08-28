@@ -23,8 +23,14 @@ export class AuthService {
   async login(user: any) {
     const payload = { sub: user.id, email: user.email };
 
-    const accessToken = this.jwtService.sign(payload, { expiresIn: "15m" });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: "7d" });
+    const accessToken = await this.jwtService.signAsync(payload, {
+      secret: process.env.JWT_SECRET,
+      expiresIn: "15m",
+    });
+    const refreshToken = await this.jwtService.signAsync(payload, {
+      secret: process.env.JWT_REFRESH_SECRET,
+      expiresIn: "30d",
+    });
 
     return {
       access_token: accessToken,
@@ -50,8 +56,15 @@ export class AuthService {
 
       const user = await this.usersService.findOne(payload.sub);
       if (!user) {
-        throw new UnauthorizedException("User not found");
+        throw new UnauthorizedException("Usuário não encontrado.");
       }
+
+      const userRefined = {
+        id: user.id,
+        email: user.email,
+        isActive: user.isActive,
+        role: user.role,
+      };
 
       // Opcional: checar se refreshToken ainda é válido no banco
       // (ex: se o usuário fez logout, invalida o token)
@@ -63,10 +76,10 @@ export class AuthService {
 
       const newRefreshToken = await this.jwtService.signAsync(
         { sub: user.id },
-        { secret: process.env.JWT_REFRESH_SECRET, expiresIn: "7d" }
+        { secret: process.env.JWT_REFRESH_SECRET, expiresIn: "30d" }
       );
 
-      return { accessToken, refreshToken: newRefreshToken, user };
+      return { accessToken, refreshToken: newRefreshToken, user: userRefined };
     } catch (e) {
       console.error("Error refreshing tokens:", e);
       throw new UnauthorizedException("Invalid refresh token");

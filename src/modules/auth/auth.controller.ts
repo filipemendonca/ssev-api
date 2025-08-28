@@ -22,6 +22,13 @@ export class AuthController {
     const user = await this.authService.validateUser(dto.email, dto.password);
     const { access_token, refresh_token } = await this.authService.login(user);
 
+    const userRefined = {
+      id: user.id,
+      email: user.email,
+      isActive: user.isActive,
+      role: user.role,
+    };
+
     res.cookie("refresh_token", refresh_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -30,7 +37,7 @@ export class AuthController {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 dias
     });
 
-    return { access_token };
+    return { access_token, user: userRefined };
   }
 
   @Post("refresh")
@@ -71,5 +78,18 @@ export class AuthController {
     });
 
     return { message: "Logout efetuado com sucesso" };
+  }
+
+  @Post("validate-refresh")
+  async validateRefresh(@Body("refresh_token") token: string) {
+    try {
+      const payload = await this.authService["jwtService"].verifyAsync(token, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
+      return { valid: true, userId: payload.sub };
+    } catch (ex) {
+      console.error(ex);
+      return { valid: false };
+    }
   }
 }
