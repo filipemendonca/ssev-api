@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Sample } from "@prisma/client";
+import { Prisma, Sample } from "@prisma/client";
 import { PrismaService } from "prisma/prisma.service";
 import { BaseRepository } from "../../common/base.repository";
 import { SampleDto } from "./dto/sample.dto";
@@ -9,7 +9,10 @@ interface FindByNameParams {
 }
 
 @Injectable()
-export class SampleRepository extends BaseRepository<Sample> {
+export class SampleRepository extends BaseRepository<
+  Prisma.SampleDelegate,
+  Sample
+> {
   constructor(prisma: PrismaService) {
     super(prisma, (p) => p.sample);
   }

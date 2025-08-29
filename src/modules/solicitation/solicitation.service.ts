@@ -3,6 +3,8 @@ import { SolicitationRepository } from "./solicitation.repository";
 import { SolicitationDto } from "./dto/solicitation.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
+import { CurrentUserType } from "src/common/utils/current-user.util";
+import { Role } from "@prisma/client";
 
 @Injectable()
 export class SolicitationService {
@@ -10,10 +12,18 @@ export class SolicitationService {
 
   public async findAll(
     pagination: PaginationQueryDto,
-    userId?: string
+    user?: CurrentUserType
   ): Promise<SuccessResponse<SolicitationDto[]>> {
-    const { items, total, hasNextPage, totalPages } =
-      await this.repo.findAll(pagination);
+    const where: any = {};
+
+    if (user?.role === Role.VETERINARIO && user?.id) {
+      where.userId = user.id;
+    }
+
+    const { items, total, hasNextPage, totalPages } = await this.repo.findAll(
+      pagination,
+      where
+    );
 
     return new SuccessResponse(items, null, {
       total,

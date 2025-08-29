@@ -1,24 +1,40 @@
 import { PrismaClient } from "@prisma/client";
 import { PaginationQueryDto } from "./dto/pagination-query.dto";
 
-export class BaseRepository<T> {
-  protected readonly model: any;
+type WhereArg<TDelegate extends DelegateMethods> =
+  NonNullable<Parameters<TDelegate["findMany"]>[0]> extends { where?: infer W }
+    ? W
+    : never;
+
+type DelegateMethods = {
+  findMany: (...args: any[]) => any;
+  count: (...args: any[]) => any;
+  findFirst: (...args: any[]) => any;
+  findUnique: (...args: any[]) => any;
+  create: (...args: any[]) => any;
+  update: (...args: any[]) => any;
+  delete: (...args: any[]) => any;
+};
+
+export class BaseRepository<TDelegate extends DelegateMethods, TEntity> {
+  protected readonly model: TDelegate;
 
   constructor(
     protected readonly prisma: PrismaClient,
-    modelAccessor: (prisma: PrismaClient) => any
+    modelAccessor: (prisma: PrismaClient) => TDelegate
   ) {
     this.model = modelAccessor(prisma);
   }
 
-  async findAll(pagination: PaginationQueryDto) {
+  async findAll(pagination: PaginationQueryDto, filters?: WhereArg<TDelegate>) {
     const { limit, currentPage, name } = pagination;
 
     const skip = (currentPage - 1) * limit;
 
     const [items, total] = await Promise.all([
       this.model.findMany({
-        where: name ? { name: { contains: name, mode: "insensitive" } } : {},
+        //where: name ? { name: { contains: name, mode: "insensitive" } } : {},
+        where: filters ?? {},
         orderBy: [
           {
             createdAt: "desc",
@@ -38,30 +54,30 @@ export class BaseRepository<T> {
       (pagination.currentPage - 1) * pagination.limit + pagination.limit <
       total;
 
-    return { items, total, totalPages, hasNextPage };
+    return { items: items as TEntity[], total, totalPages, hasNextPage };
   }
 
-  async findOne(params: any): Promise<T | null> {
+  async findOne(params: any): Promise<TEntity | null> {
     return this.model.findFirst(params);
   }
 
-  async findById(id: string): Promise<T | null> {
+  async findById(id: string): Promise<TEntity | null> {
     return this.model.findUnique({ where: { id } });
   }
 
-  async findMany(params: any): Promise<T | null> {
+  async findMany(params: any): Promise<TEntity | null> {
     return await this.model.findMany(params);
   }
 
-  async create(data: Partial<T>): Promise<T> {
+  async create(data: Partial<TEntity>): Promise<TEntity> {
     return this.model.create({ data });
   }
 
-  async update(id: string, data: Partial<T>): Promise<T> {
+  async update(id: string, data: Partial<TEntity>): Promise<TEntity> {
     return this.model.update({ where: { id }, data });
   }
 
-  async delete(id: string): Promise<T> {
+  async delete(id: string): Promise<TEntity> {
     return this.model.delete({ where: { id } });
   }
 }

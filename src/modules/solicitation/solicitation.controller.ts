@@ -16,6 +16,7 @@ import { JwtAuthGuard } from "../auth/guards/auth.guard";
 import { SolicitationDto } from "./dto/solicitation.dto";
 import { SolicitationService } from "./solicitation.service";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
+import { CurrentUserType } from "src/common/utils/current-user.util";
 
 @UseGuards(JwtAuthGuard)
 @Controller("solicitation")
@@ -25,15 +26,15 @@ export class SolicitationController {
   @Get()
   async findAll(
     @Query() query: PaginationQueryDto,
-    @CurrentUser() user
+    @CurrentUser() user: CurrentUserType
   ): Promise<SuccessResponse<SolicitationDto[]>> {
-    const { data } = await this.service.findAll(query);
+    const response = await this.service.findAll(query, user);
 
-    if (data.length === 0) {
+    if (response?.data?.length === 0) {
       throw new NotFoundException(`Nenhum registro encontrado.`);
     }
 
-    return this.service.findAll(query);
+    return response;
   }
 
   @Get(":id")

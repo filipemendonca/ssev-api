@@ -1,8 +1,8 @@
 import { Injectable, UnprocessableEntityException } from "@nestjs/common";
-import { ExamsRepository } from "./exams.repository";
-import { ExamsDto } from "./dto/exams.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
+import { ExamsDto } from "./dto/exams.dto";
+import { ExamsRepository } from "./exams.repository";
 
 @Injectable()
 export class ExamsService {
