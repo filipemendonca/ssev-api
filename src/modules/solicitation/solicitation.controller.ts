@@ -10,24 +10,22 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { JwtAuthGuard } from "../auth/guards/auth.guard";
-import { SolicitationService } from "./solicitation.service";
-import { SolicitationDto } from "./dto/solicitation.dto";
-import { SuccessResponse } from "../../common/dto/response.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
-import { RolesGuard } from "../auth/guards/roles.guard";
-import { Role } from "@prisma/client";
-import { Roles } from "../../common/decorators/roles.decorator";
+import { SuccessResponse } from "../../common/dto/response.dto";
+import { JwtAuthGuard } from "../auth/guards/auth.guard";
+import { SolicitationDto } from "./dto/solicitation.dto";
+import { SolicitationService } from "./solicitation.service";
+import { CurrentUser } from "src/common/decorators/current-user.decorator";
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @Controller("solicitation")
-@Roles(Role.ADMINISTRADOR)
 export class SolicitationController {
   constructor(private readonly service: SolicitationService) {}
 
   @Get()
   async findAll(
-    @Query() query: PaginationQueryDto
+    @Query() query: PaginationQueryDto,
+    @CurrentUser() user
   ): Promise<SuccessResponse<SolicitationDto[]>> {
     const { data } = await this.service.findAll(query);
 

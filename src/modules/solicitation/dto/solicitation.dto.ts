@@ -2,6 +2,7 @@ import { BloodCollectionTubeColor, SolicitationStatus } from "@prisma/client";
 
 export class SolicitationDto {
   id: string;
+  userId: string;
   tutor: string;
   patient: string;
   gender: string;

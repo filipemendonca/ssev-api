@@ -9,7 +9,8 @@ export class SolicitationService {
   constructor(private readonly repo: SolicitationRepository) {}
 
   public async findAll(
-    pagination: PaginationQueryDto
+    pagination: PaginationQueryDto,
+    userId?: string
   ): Promise<SuccessResponse<SolicitationDto[]>> {
     const { items, total, hasNextPage, totalPages } =
       await this.repo.findAll(pagination);
