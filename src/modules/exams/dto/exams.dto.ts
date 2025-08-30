@@ -3,6 +3,4 @@ export class ExamsDto {
   name: string;
 }
 
-export class ExamsFilterDto {
-  name?: string = "";
-}
+export type ExamsFilterDto = Omit<ExamsDto, "id">;

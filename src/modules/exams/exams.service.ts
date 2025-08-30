@@ -1,7 +1,7 @@
 import { Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
-import { ExamsDto } from "./dto/exams.dto";
+import { ExamsDto, ExamsFilterDto } from "./dto/exams.dto";
 import { ExamsRepository } from "./exams.repository";
 
 @Injectable()
@@ -9,10 +9,19 @@ export class ExamsService {
   constructor(private readonly repo: ExamsRepository) {}
 
   public async findAll(
-    pagination: PaginationQueryDto
+    pagination: PaginationQueryDto,
+    filter?: ExamsFilterDto
   ): Promise<SuccessResponse<ExamsDto[]>> {
-    const { items, total, hasNextPage, totalPages } =
-      await this.repo.findAll(pagination);
+    const where: any = {};
+
+    if (filter?.name) {
+      where.name = { contains: filter.name, mode: "insensitive" };
+    }
+
+    const { items, total, hasNextPage, totalPages } = await this.repo.findAll(
+      pagination,
+      where
+    );
 
     return new SuccessResponse(items, null, {
       total,

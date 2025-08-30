@@ -16,7 +16,7 @@ import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { JwtAuthGuard } from "../auth/guards/auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
-import { ExamsDto } from "./dto/exams.dto";
+import { ExamsDto, ExamsFilterDto } from "./dto/exams.dto";
 import { ExamsService } from "./exams.service";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -47,6 +47,20 @@ export class ExamsController {
     }
 
     return new SuccessResponse<ExamsDto>(exam);
+  }
+
+  @Post("/search")
+  async search(
+    @Query() query: PaginationQueryDto,
+    @Body() filter: ExamsFilterDto
+  ): Promise<SuccessResponse<ExamsDto[]>> {
+    const exams = await this.service.findAll(query, filter);
+
+    if (!exams) {
+      throw new NotFoundException(`Amostra não encontrada.`);
+    }
+
+    return exams;
   }
 
   @Post()
