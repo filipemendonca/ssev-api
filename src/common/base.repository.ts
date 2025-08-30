@@ -27,14 +27,13 @@ export class BaseRepository<TDelegate extends DelegateMethods, TEntity> {
   }
 
   async findAll(pagination: PaginationQueryDto, filters?: WhereArg<TDelegate>) {
-    const { limit, currentPage, name } = pagination;
+    const { limit, currentPage } = pagination;
 
     const skip = (currentPage - 1) * limit;
 
     const [items, total] = await Promise.all([
       this.model.findMany({
-        //where: name ? { name: { contains: name, mode: "insensitive" } } : {},
-        where: filters ?? {},
+        where: filters,
         orderBy: [
           {
             createdAt: "desc",

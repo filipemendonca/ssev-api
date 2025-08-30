@@ -14,7 +14,10 @@ import { JwtAuthGuard } from "../auth/guards/auth.guard";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { InfectiousAgentsService } from "./infectious-agents.service";
-import { InfectiousAgentsDto } from "./dto/infectious-agents.dto";
+import {
+  InfectiousAgentsDto,
+  InfectiousAgentsFilterDto,
+} from "./dto/infectious-agents.dto";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { Role } from "@prisma/client";
 import { Roles } from "../../common/decorators/roles.decorator";
@@ -49,6 +52,20 @@ export class InfectiousAgentsController {
     }
 
     return new SuccessResponse<InfectiousAgentsDto>(exam);
+  }
+
+  @Post("/search")
+  async search(
+    @Query() query: PaginationQueryDto,
+    @Body() filter: InfectiousAgentsFilterDto
+  ): Promise<SuccessResponse<InfectiousAgentsDto[]>> {
+    const infectiouAgents = await this.service.findAll(query, filter);
+
+    if (!infectiouAgents) {
+      throw new NotFoundException(`Amostra não encontrada.`);
+    }
+
+    return infectiouAgents;
   }
 
   @Post()

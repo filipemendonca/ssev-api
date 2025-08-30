@@ -1,6 +1,9 @@
 import { Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { InfectiousAgentsRepository } from "./infectious-agents.repository";
-import { InfectiousAgentsDto } from "./dto/infectious-agents.dto";
+import {
+  InfectiousAgentsDto,
+  InfectiousAgentsFilterDto,
+} from "./dto/infectious-agents.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 
@@ -9,10 +12,19 @@ export class InfectiousAgentsService {
   constructor(private readonly repo: InfectiousAgentsRepository) {}
 
   public async findAll(
-    pagination: PaginationQueryDto
+    pagination: PaginationQueryDto,
+    filter?: InfectiousAgentsFilterDto
   ): Promise<SuccessResponse<InfectiousAgentsDto[]>> {
-    const { items, total, hasNextPage, totalPages } =
-      await this.repo.findAll(pagination);
+    const where: any = {};
+
+    if (filter?.name) {
+      where.name = { contains: filter.name, mode: "insensitive" };
+    }
+
+    const { items, total, hasNextPage, totalPages } = await this.repo.findAll(
+      pagination,
+      where
+    );
 
     return new SuccessResponse(items, null, {
       total,

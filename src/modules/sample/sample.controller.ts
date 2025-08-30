@@ -49,17 +49,18 @@ export class SampleController {
     return new SuccessResponse<SampleDto>(sample);
   }
 
-  @Post("/findMany")
-  async findMany(
+  @Post("/search")
+  async search(
+    @Query() query: PaginationQueryDto,
     @Body() filter: SampleFilterDto
   ): Promise<SuccessResponse<SampleDto[]>> {
-    const sample = await this.service.findByName(filter);
+    const sample = await this.service.findAll(query, filter);
 
     if (!sample) {
       throw new NotFoundException(`Amostra não encontrada.`);
     }
 
-    return new SuccessResponse<SampleDto[]>(sample);
+    return sample;
   }
 
   @Post()

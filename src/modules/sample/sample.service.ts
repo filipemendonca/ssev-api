@@ -9,10 +9,19 @@ export class SampleService {
   constructor(private readonly repo: SampleRepository) {}
 
   public async findAll(
-    pagination: PaginationQueryDto
+    pagination: PaginationQueryDto,
+    filter?: SampleFilterDto
   ): Promise<SuccessResponse<SampleDto[]>> {
-    const { items, total, totalPages, hasNextPage } =
-      await this.repo.findAll(pagination);
+    const where: any = {};
+
+    if (filter?.name) {
+      where.name = { contains: filter.name, mode: "insensitive" };
+    }
+
+    const { items, total, totalPages, hasNextPage } = await this.repo.findAll(
+      pagination,
+      where
+    );
 
     return new SuccessResponse(items, null, {
       total,
@@ -25,12 +34,6 @@ export class SampleService {
 
   public async findById(id: string): Promise<SampleDto | null> {
     return await this.repo.findById(id);
-  }
-
-  public async findByName(
-    filter: SampleFilterDto
-  ): Promise<SampleDto[] | null> {
-    return await this.repo.findByName(filter.name);
   }
 
   public async create(data: SampleDto): Promise<SampleDto> {
