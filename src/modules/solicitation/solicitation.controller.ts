@@ -5,18 +5,18 @@ import {
   Get,
   NotFoundException,
   Param,
+  Patch,
   Post,
-  Put,
   Query,
   UseGuards,
 } from "@nestjs/common";
+import { CurrentUser } from "src/common/decorators/current-user.decorator";
+import { CurrentUserType } from "src/common/utils/current-user.util";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { JwtAuthGuard } from "../auth/guards/auth.guard";
 import { SolicitationDto } from "./dto/solicitation.dto";
 import { SolicitationService } from "./solicitation.service";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
-import { CurrentUserType } from "src/common/utils/current-user.util";
 
 @UseGuards(JwtAuthGuard)
 @Controller("solicitation")
@@ -70,7 +70,7 @@ export class SolicitationController {
     }
   }
 
-  @Put(":id")
+  @Patch(":id")
   async update(
     @Param("id") id: string,
     @Body() data: SolicitationDto
