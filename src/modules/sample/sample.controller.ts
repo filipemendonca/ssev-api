@@ -21,7 +21,6 @@ import { RolesGuard } from "../auth/guards/roles.guard";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("sample")
-@Roles(Role.ADMINISTRADOR)
 export class SampleController {
   constructor(private readonly service: SampleService) {}
 
@@ -39,6 +38,7 @@ export class SampleController {
   }
 
   @Get(":id")
+  @Roles(Role.ADMINISTRADOR)
   async findOne(@Param("id") id: string): Promise<SuccessResponse<SampleDto>> {
     const sample = await this.service.findById(id);
 
@@ -50,6 +50,7 @@ export class SampleController {
   }
 
   @Post("/search")
+  @Roles(Role.ADMINISTRADOR)
   async search(
     @Query() query: PaginationQueryDto,
     @Body() filter: SampleFilterDto
@@ -64,6 +65,7 @@ export class SampleController {
   }
 
   @Post()
+  @Roles(Role.ADMINISTRADOR)
   async create(@Body() data: SampleDto): Promise<SuccessResponse<SampleDto>> {
     const newSample = await this.service.create(data);
 
@@ -78,6 +80,7 @@ export class SampleController {
   }
 
   @Put(":id")
+  @Roles(Role.ADMINISTRADOR)
   async update(
     @Param("id") id: string,
     @Body() data: SampleDto
@@ -95,6 +98,7 @@ export class SampleController {
   }
 
   @Delete(":id")
+  @Roles(Role.ADMINISTRADOR)
   async delete(@Param("id") id: string): Promise<SuccessResponse<SampleDto>> {
     const existingSample = await this.service.findById(id);
 

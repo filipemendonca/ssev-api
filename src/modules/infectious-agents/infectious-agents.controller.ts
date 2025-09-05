@@ -24,7 +24,6 @@ import { Roles } from "../../common/decorators/roles.decorator";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("infectious-agents")
-@Roles(Role.ADMINISTRADOR)
 export class InfectiousAgentsController {
   constructor(private readonly service: InfectiousAgentsService) {}
 
@@ -42,6 +41,7 @@ export class InfectiousAgentsController {
   }
 
   @Get(":id")
+  @Roles(Role.ADMINISTRADOR)
   async findOne(
     @Param("id") id: string
   ): Promise<SuccessResponse<InfectiousAgentsDto>> {
@@ -55,6 +55,7 @@ export class InfectiousAgentsController {
   }
 
   @Post("/search")
+  @Roles(Role.ADMINISTRADOR)
   async search(
     @Query() query: PaginationQueryDto,
     @Body() filter: InfectiousAgentsFilterDto
@@ -69,6 +70,7 @@ export class InfectiousAgentsController {
   }
 
   @Post()
+  @Roles(Role.ADMINISTRADOR)
   async create(
     @Body() data: InfectiousAgentsDto
   ): Promise<SuccessResponse<InfectiousAgentsDto>> {
@@ -85,6 +87,7 @@ export class InfectiousAgentsController {
   }
 
   @Put(":id")
+  @Roles(Role.ADMINISTRADOR)
   async update(
     @Param("id") id: string,
     @Body() data: InfectiousAgentsDto
@@ -102,6 +105,7 @@ export class InfectiousAgentsController {
   }
 
   @Delete(":id")
+  @Roles(Role.ADMINISTRADOR)
   async delete(
     @Param("id") id: string
   ): Promise<SuccessResponse<InfectiousAgentsDto>> {

@@ -21,7 +21,6 @@ import { ExamsService } from "./exams.service";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("exams")
-@Roles(Role.ADMINISTRADOR)
 export class ExamsController {
   constructor(private readonly service: ExamsService) {}
 
@@ -39,6 +38,7 @@ export class ExamsController {
   }
 
   @Get(":id")
+  @Roles(Role.ADMINISTRADOR)
   async findOne(@Param("id") id: string): Promise<SuccessResponse<ExamsDto>> {
     const exam = await this.service.findOne(id);
 
@@ -50,6 +50,7 @@ export class ExamsController {
   }
 
   @Post("/search")
+  @Roles(Role.ADMINISTRADOR)
   async search(
     @Query() query: PaginationQueryDto,
     @Body() filter: ExamsFilterDto
@@ -64,6 +65,7 @@ export class ExamsController {
   }
 
   @Post()
+  @Roles(Role.ADMINISTRADOR)
   async create(@Body() data: ExamsDto): Promise<SuccessResponse<ExamsDto>> {
     const newExam = await this.service.create(data);
 
@@ -75,6 +77,7 @@ export class ExamsController {
   }
 
   @Put(":id")
+  @Roles(Role.ADMINISTRADOR)
   async update(
     @Param("id") id: string,
     @Body() data: ExamsDto
@@ -92,6 +95,7 @@ export class ExamsController {
   }
 
   @Delete(":id")
+  @Roles(Role.ADMINISTRADOR)
   async delete(@Param("id") id: string): Promise<SuccessResponse<ExamsDto>> {
     const existingExam = await this.service.findOne(id);
 
