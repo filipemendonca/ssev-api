@@ -17,6 +17,7 @@ import { SuccessResponse } from "../../common/dto/response.dto";
 import { JwtAuthGuard } from "../auth/guards/auth.guard";
 import { SolicitationDto } from "./dto/solicitation.dto";
 import { SolicitationService } from "./solicitation.service";
+import { SolicitationStatus } from "@prisma/client";
 
 @UseGuards(JwtAuthGuard)
 @Controller("solicitation")
@@ -63,7 +64,7 @@ export class SolicitationController {
 
       return new SuccessResponse<SolicitationDto>(
         newSolicitation,
-        "Solicitação criado com sucesso."
+        "Solicitação criada com sucesso."
       );
     } catch (error) {
       console.error("Error creating solicitation:", error);
@@ -83,7 +84,34 @@ export class SolicitationController {
 
     return new SuccessResponse<SolicitationDto>(
       await this.service.update(id, data),
-      "Solicitação atualizado com sucesso."
+      "Solicitação atualizada com sucesso."
+    );
+  }
+
+  @Patch("blockUnblockSolicitation/:id")
+  async blockUnblockSolicitation(
+    @Param("id") id: string,
+    @Body() cause: Pick<SolicitationDto, "blockedCause">
+  ): Promise<SuccessResponse<SolicitationDto>> {
+    let existingData = await this.service.findOne(id);
+
+    if (!existingData) {
+      throw new NotFoundException(`Solicitação não encontrada.`);
+    }
+
+    if (existingData.status === SolicitationStatus.BLOQUEADO) {
+      existingData.status = SolicitationStatus.EM_ANALISE;
+      existingData.blockedCause = null;
+      existingData.blockedAt = null;
+    } else {
+      existingData.status = SolicitationStatus.BLOQUEADO;
+      existingData.blockedCause = cause.blockedCause;
+      existingData.blockedAt = new Date();
+    }
+
+    return new SuccessResponse<SolicitationDto>(
+      await this.service.update(id, existingData),
+      "Solicitação atualizada com sucesso."
     );
   }
 

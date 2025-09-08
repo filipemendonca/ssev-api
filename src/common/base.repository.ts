@@ -73,7 +73,11 @@ export class BaseRepository<TDelegate extends DelegateMethods, TEntity> {
   }
 
   async update(id: string, data: Partial<TEntity>): Promise<TEntity> {
-    return this.model.update({ where: { id }, data });
+    try {
+      return this.model.update({ where: { id }, data });
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   async delete(id: string): Promise<TEntity> {

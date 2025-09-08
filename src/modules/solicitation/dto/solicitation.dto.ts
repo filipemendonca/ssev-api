@@ -14,9 +14,12 @@ export class SolicitationDto {
   infectiousAgents: string[];
   samples: string[];
   exams: string[];
+  canceledCause: string;
+  blockedCause: string;
   status: SolicitationStatus;
   finishedAt: Date;
   canceledAt: Date;
   createdAt: Date;
   updatedAt: Date;
+  blockedAt: Date;
 }
