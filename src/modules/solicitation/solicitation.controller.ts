@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -17,7 +18,7 @@ import { SuccessResponse } from "../../common/dto/response.dto";
 import { JwtAuthGuard } from "../auth/guards/auth.guard";
 import { SolicitationDto } from "./dto/solicitation.dto";
 import { SolicitationService } from "./solicitation.service";
-import { SolicitationStatus } from "@prisma/client";
+import { Role, SolicitationStatus } from "@prisma/client";
 
 @UseGuards(JwtAuthGuard)
 @Controller("solicitation")
@@ -40,15 +41,34 @@ export class SolicitationController {
 
   @Get(":id")
   async findOne(
-    @Param("id") id: string
+    @Param("id") id: string,
+    @CurrentUser() user: CurrentUserType,
+    @Query() mode: { isViewMode: string }
   ): Promise<SuccessResponse<SolicitationDto>> {
-    const solcitaition = await this.service.findOne(id);
+    const solicitation = await this.service.findOne(id);
 
-    if (!solcitaition) {
+    if (!solicitation) {
       throw new NotFoundException(`Solicitação não encontrada.`);
     }
 
-    return new SuccessResponse<SolicitationDto>(solcitaition);
+    const { status } = solicitation;
+
+    if (mode.isViewMode === "true") {
+      return new SuccessResponse<SolicitationDto>(solicitation);
+    } else {
+      if (status === SolicitationStatus.FINALIZADO)
+        throw new ForbiddenException(`Ação não permitida.`);
+
+      if (
+        (user.role !== Role.ADMINISTRADOR &&
+          status === SolicitationStatus.BLOQUEADO) ||
+        status === SolicitationStatus.CANCELADO
+      ) {
+        throw new ForbiddenException(`Ação não permitida.`);
+      }
+
+      return new SuccessResponse<SolicitationDto>(solicitation);
+    }
   }
 
   @Post()
@@ -108,6 +128,27 @@ export class SolicitationController {
       existingData.blockedCause = cause.blockedCause;
       existingData.blockedAt = new Date();
     }
+
+    return new SuccessResponse<SolicitationDto>(
+      await this.service.update(id, existingData),
+      "Solicitação atualizada com sucesso."
+    );
+  }
+
+  @Patch("cancelSolicitation/:id")
+  async cancelSolicitation(
+    @Param("id") id: string,
+    @Body() cause: Pick<SolicitationDto, "canceledCause">
+  ): Promise<SuccessResponse<SolicitationDto>> {
+    let existingData = await this.service.findOne(id);
+
+    if (!existingData) {
+      throw new NotFoundException(`Solicitação não encontrada.`);
+    }
+
+    existingData.status = SolicitationStatus.CANCELADO;
+    existingData.canceledCause = cause.canceledCause;
+    existingData.canceledAt = new Date();
 
     return new SuccessResponse<SolicitationDto>(
       await this.service.update(id, existingData),
