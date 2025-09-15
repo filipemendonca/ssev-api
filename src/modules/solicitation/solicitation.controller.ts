@@ -19,6 +19,7 @@ import { JwtAuthGuard } from "../auth/guards/auth.guard";
 import { SolicitationDto } from "./dto/solicitation.dto";
 import { SolicitationService } from "./solicitation.service";
 import { Role, SolicitationStatus } from "@prisma/client";
+import { ValidateEditSolicitation } from "./util/solicitation-configure-edit";
 
 @UseGuards(JwtAuthGuard)
 @Controller("solicitation")
@@ -56,16 +57,20 @@ export class SolicitationController {
     if (mode.isViewMode === "true") {
       return new SuccessResponse<SolicitationDto>(solicitation);
     } else {
-      if (status === SolicitationStatus.FINALIZADO)
-        throw new ForbiddenException(`Ação não permitida.`);
+      const { canEdit } = ValidateEditSolicitation(user.role, status);
 
-      if (
-        (user.role !== Role.ADMINISTRADOR &&
-          status === SolicitationStatus.BLOQUEADO) ||
-        status === SolicitationStatus.CANCELADO
-      ) {
-        throw new ForbiddenException(`Ação não permitida.`);
-      }
+      if (!canEdit) throw new ForbiddenException(`Ação não permitida.`);
+
+      // if (status === SolicitationStatus.FINALIZADO)
+      //   throw new ForbiddenException(`Ação não permitida.`);
+
+      // if (
+      //   (user.role !== Role.ADMINISTRADOR &&
+      //     status === SolicitationStatus.BLOQUEADO) ||
+      //   status === SolicitationStatus.CANCELADO
+      // ) {
+      //   throw new ForbiddenException(`Ação não permitida.`);
+      // }
 
       return new SuccessResponse<SolicitationDto>(solicitation);
     }
