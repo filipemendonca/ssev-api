@@ -11,6 +11,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
+import { SolicitationStatus } from "@prisma/client";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { CurrentUserType } from "src/common/utils/current-user.util";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
@@ -18,13 +19,16 @@ import { SuccessResponse } from "../../common/dto/response.dto";
 import { JwtAuthGuard } from "../auth/guards/auth.guard";
 import { SolicitationDto } from "./dto/solicitation.dto";
 import { SolicitationService } from "./solicitation.service";
-import { Role, SolicitationStatus } from "@prisma/client";
-import { ValidateEditSolicitation } from "./util/solicitation-configure-edit";
+import { validateEditSolicitation } from "./util/solicitation-configure-edit";
+import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
 
 @UseGuards(JwtAuthGuard)
 @Controller("solicitation")
 export class SolicitationController {
-  constructor(private readonly service: SolicitationService) {}
+  constructor(
+    private readonly service: SolicitationService,
+    private readonly solicitationHistoryService: SolicitationHistoryService
+  ) {}
 
   @Get()
   async findAll(
@@ -57,20 +61,9 @@ export class SolicitationController {
     if (mode.isViewMode === "true") {
       return new SuccessResponse<SolicitationDto>(solicitation);
     } else {
-      const { canEdit } = ValidateEditSolicitation(user.role, status);
+      const { canEdit } = validateEditSolicitation(user.role, status);
 
       if (!canEdit) throw new ForbiddenException(`Ação não permitida.`);
-
-      // if (status === SolicitationStatus.FINALIZADO)
-      //   throw new ForbiddenException(`Ação não permitida.`);
-
-      // if (
-      //   (user.role !== Role.ADMINISTRADOR &&
-      //     status === SolicitationStatus.BLOQUEADO) ||
-      //   status === SolicitationStatus.CANCELADO
-      // ) {
-      //   throw new ForbiddenException(`Ação não permitida.`);
-      // }
 
       return new SuccessResponse<SolicitationDto>(solicitation);
     }
@@ -78,7 +71,8 @@ export class SolicitationController {
 
   @Post()
   async create(
-    @Body() data: SolicitationDto
+    @Body() data: SolicitationDto,
+    @CurrentUser() user: CurrentUserType
   ): Promise<SuccessResponse<SolicitationDto>> {
     try {
       const newSolicitation = await this.service.create(data);
@@ -86,6 +80,16 @@ export class SolicitationController {
       if (newSolicitation === null) {
         throw new NotFoundException(`Erro ao criar a solicitação.`);
       }
+
+      await this.solicitationHistoryService.create({
+        id: undefined,
+        solicitationId: newSolicitation.id,
+        newStatus: newSolicitation.status,
+        changedAt: new Date(),
+        changedById: user.id,
+        previousStatus: null,
+        blockedCause: newSolicitation.blockedCause || null,
+      });
 
       return new SuccessResponse<SolicitationDto>(
         newSolicitation,
@@ -99,12 +103,27 @@ export class SolicitationController {
   @Patch(":id")
   async update(
     @Param("id") id: string,
-    @Body() data: SolicitationDto
+    @Body() data: SolicitationDto,
+    @CurrentUser() user: CurrentUserType
   ): Promise<SuccessResponse<SolicitationDto>> {
     const existingData = await this.service.findOne(id);
+    const lastHistory =
+      await this.solicitationHistoryService.findLastBySolicitationId(id);
 
-    if (!existingData) {
+    if (!existingData && !lastHistory) {
       throw new NotFoundException(`Solicitação não encontrada.`);
+    }
+
+    if (lastHistory.newStatus !== data.status) {
+      await this.solicitationHistoryService.create({
+        id: undefined,
+        solicitationId: id,
+        newStatus: data.status,
+        changedAt: new Date(),
+        changedById: user.id,
+        previousStatus: lastHistory.newStatus,
+        blockedCause: data.blockedCause || null,
+      });
     }
 
     return new SuccessResponse<SolicitationDto>(
@@ -116,22 +135,48 @@ export class SolicitationController {
   @Patch("blockUnblockSolicitation/:id")
   async blockUnblockSolicitation(
     @Param("id") id: string,
-    @Body() cause: Pick<SolicitationDto, "blockedCause">
+    @Body() cause: Pick<SolicitationDto, "blockedCause">,
+    @CurrentUser() user: CurrentUserType
   ): Promise<SuccessResponse<SolicitationDto>> {
     let existingData = await this.service.findOne(id);
 
-    if (!existingData) {
+    const lastHistory =
+      await this.solicitationHistoryService.findLastSolicitationHistoryToUnblockSolicitation(
+        id
+      );
+
+    if (!existingData && !lastHistory) {
       throw new NotFoundException(`Solicitação não encontrada.`);
     }
 
-    if (existingData.status === SolicitationStatus.BLOQUEADO) {
-      existingData.status = SolicitationStatus.EM_ANALISE;
-      existingData.blockedCause = null;
-      existingData.blockedAt = null;
-    } else {
+    if (existingData.status !== SolicitationStatus.BLOQUEADO) {
+      await this.solicitationHistoryService.create({
+        id: undefined,
+        solicitationId: id,
+        newStatus: SolicitationStatus.BLOQUEADO,
+        changedAt: new Date(),
+        changedById: user.id,
+        previousStatus: existingData.status,
+        blockedCause: cause.blockedCause || null,
+      });
+
       existingData.status = SolicitationStatus.BLOQUEADO;
       existingData.blockedCause = cause.blockedCause;
       existingData.blockedAt = new Date();
+    } else {
+      await this.solicitationHistoryService.create({
+        id: undefined,
+        solicitationId: id,
+        newStatus: lastHistory.newStatus, //Ultimo status anterior ao bloqueio
+        changedAt: new Date(),
+        changedById: user.id,
+        previousStatus: existingData.status,
+        blockedCause: null,
+      });
+
+      existingData.status = lastHistory.newStatus;
+      existingData.blockedCause = null;
+      existingData.blockedAt = null;
     }
 
     return new SuccessResponse<SolicitationDto>(
@@ -143,13 +188,24 @@ export class SolicitationController {
   @Patch("cancelSolicitation/:id")
   async cancelSolicitation(
     @Param("id") id: string,
-    @Body() cause: Pick<SolicitationDto, "canceledCause">
+    @Body() cause: Pick<SolicitationDto, "canceledCause">,
+    @CurrentUser() user: CurrentUserType
   ): Promise<SuccessResponse<SolicitationDto>> {
     let existingData = await this.service.findOne(id);
 
     if (!existingData) {
       throw new NotFoundException(`Solicitação não encontrada.`);
     }
+
+    await this.solicitationHistoryService.create({
+      id: undefined,
+      solicitationId: id,
+      newStatus: SolicitationStatus.CANCELADO, //Ultimo status anterior ao bloqueio
+      changedAt: new Date(),
+      changedById: user.id,
+      previousStatus: existingData.status,
+      blockedCause: null,
+    });
 
     existingData.status = SolicitationStatus.CANCELADO;
     existingData.canceledCause = cause.canceledCause;

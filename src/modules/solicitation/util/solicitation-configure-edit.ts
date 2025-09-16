@@ -4,11 +4,11 @@ interface SolicitationConfigureEdit {
   canEdit: boolean;
 }
 
-export function Config({ canEdit }: SolicitationConfigureEdit) {
+export function config({ canEdit }: SolicitationConfigureEdit) {
   return { canEdit };
 }
 
-export function ValidateEditSolicitation(
+export function validateEditSolicitation(
   userRole: Role,
   status: SolicitationStatus
 ): SolicitationConfigureEdit {
@@ -16,17 +16,17 @@ export function ValidateEditSolicitation(
     case SolicitationStatus.CRIADO:
     case SolicitationStatus.FILTRAGEM:
     case SolicitationStatus.EM_TRANSPORTE:
-      return Config({ canEdit: true });
+      return config({ canEdit: true });
     case SolicitationStatus.EM_ANALISE:
       if (userRole === Role.ADMINISTRADOR || userRole === Role.PATOLOGISTA) {
-        return Config({ canEdit: true });
+        return config({ canEdit: true });
       } else {
-        return Config({ canEdit: false });
+        return config({ canEdit: false });
       }
     case SolicitationStatus.CANCELADO:
     case SolicitationStatus.FINALIZADO:
-      return Config({ canEdit: false });
+      return config({ canEdit: false });
     case SolicitationStatus.BLOQUEADO:
-      return Config({ canEdit: true });
+      return config({ canEdit: true });
   }
 }

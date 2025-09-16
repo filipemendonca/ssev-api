@@ -56,15 +56,29 @@ export class BaseRepository<TDelegate extends DelegateMethods, TEntity> {
     return { items: items as TEntity[], total, totalPages, hasNextPage };
   }
 
+  async findAllWithoutPagination(filters?: WhereArg<TDelegate>) {
+    const items = await this.model.findMany({
+      where: filters,
+    });
+    return items as TEntity[];
+  }
+
   async findOne(params: any): Promise<TEntity | null> {
     return this.model.findFirst(params);
+  }
+
+  async findFirst(
+    filters?: WhereArg<TDelegate>,
+    orderBy?: any[]
+  ): Promise<TEntity | null> {
+    return this.model.findFirst({ where: filters, orderBy: orderBy });
   }
 
   async findById(id: string): Promise<TEntity | null> {
     return this.model.findUnique({ where: { id } });
   }
 
-  async findMany(params: any): Promise<TEntity | null> {
+  async findMany(params: any): Promise<TEntity[] | null> {
     return await this.model.findMany(params);
   }
 

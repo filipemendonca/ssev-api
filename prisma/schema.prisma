@@ -51,6 +51,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt  
   solicitations Solicitation[]
+  solicitationHistories SolicitationHistory[]
 }
 
 model Sample {
@@ -98,6 +99,20 @@ model Solicitation {
   bloodCollectionTubeColor BloodCollectionTubeColor? @default(TAMPA_ROXA)    
   userId   String?
   user     User?   @relation(fields: [userId], references: [id])
+  solicitationHistories SolicitationHistory[]
+}
+
+model SolicitationHistory {
+  id        String   @id @default(cuid())  
+  solicitationId String
+  previousStatus SolicitationStatus?
+  newStatus SolicitationStatus
+  blockedCause String?  
+  changedAt DateTime @default(now())  
+  changedById String
+  changedBy User @relation(fields: [changedById], references: [id])
+  
+  solicitation Solicitation @relation(fields: [solicitationId], references: [id])
 }
 
 
