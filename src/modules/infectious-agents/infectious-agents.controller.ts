@@ -31,13 +31,13 @@ export class InfectiousAgentsController {
   async findAll(
     @Query() query: PaginationQueryDto
   ): Promise<SuccessResponse<InfectiousAgentsDto[]>> {
-    const { data } = await this.service.findAll(query);
+    const data = await this.service.findAll(query);
 
-    if (data.length === 0) {
+    if (data?.data?.length === 0) {
       throw new NotFoundException(`Nenhum registro encontrado.`);
     }
 
-    return this.service.findAll(query);
+    return data;
   }
 
   @Get(":id")

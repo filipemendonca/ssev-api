@@ -17,10 +17,10 @@ import { CurrentUserType } from "src/common/utils/current-user.util";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { JwtAuthGuard } from "../auth/guards/auth.guard";
+import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
 import { SolicitationDto } from "./dto/solicitation.dto";
 import { SolicitationService } from "./solicitation.service";
 import { validateEditSolicitation } from "./util/solicitation-configure-edit";
-import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
 
 @UseGuards(JwtAuthGuard)
 @Controller("solicitation")
