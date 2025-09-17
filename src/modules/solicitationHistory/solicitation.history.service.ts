@@ -12,8 +12,11 @@ export class SolicitationHistoryService {
   ): Promise<SolicitationHistoryDto[]> {
     const where: any = {};
     where.solicitationId = solicitationId;
-    const solicitationHistories =
-      await this.repo.findAllWithoutPagination(where);
+    const include = { changedBy: { select: { name: true } } };
+    const solicitationHistories = await this.repo.findAllWithoutPagination(
+      where,
+      include
+    );
     return solicitationHistories;
   }
 

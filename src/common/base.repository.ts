@@ -56,9 +56,10 @@ export class BaseRepository<TDelegate extends DelegateMethods, TEntity> {
     return { items: items as TEntity[], total, totalPages, hasNextPage };
   }
 
-  async findAllWithoutPagination(filters?: WhereArg<TDelegate>) {
+  async findAllWithoutPagination(filters?: WhereArg<TDelegate>, include?: any) {
     const items = await this.model.findMany({
       where: filters,
+      include: include,
     });
     return items as TEntity[];
   }
