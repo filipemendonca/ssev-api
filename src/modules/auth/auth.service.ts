@@ -66,7 +66,8 @@ export class AuthService {
       }
 
       const userRefined = {
-        id: user.id,
+        sub: user.id,
+        name: user.name,
         email: user.email,
         isActive: user.isActive,
         role: user.role,
@@ -75,15 +76,15 @@ export class AuthService {
       // Opcional: checar se refreshToken ainda é válido no banco
       // (ex: se o usuário fez logout, invalida o token)
 
-      const accessToken = await this.jwtService.signAsync(
-        { sub: user.id, email: user.email },
-        { secret: process.env.JWT_SECRET, expiresIn: "15m" }
-      );
+      const accessToken = await this.jwtService.signAsync(userRefined, {
+        secret: process.env.JWT_SECRET,
+        expiresIn: "15m",
+      });
 
-      const newRefreshToken = await this.jwtService.signAsync(
-        { sub: user.id },
-        { secret: process.env.JWT_REFRESH_SECRET, expiresIn: "7d" }
-      );
+      const newRefreshToken = await this.jwtService.signAsync(userRefined, {
+        secret: process.env.JWT_REFRESH_SECRET,
+        expiresIn: "7d",
+      });
 
       return { accessToken, refreshToken: newRefreshToken, user: userRefined };
     } catch (e) {
