@@ -114,7 +114,7 @@ export class SolicitationController {
       throw new NotFoundException(`Solicitação não encontrada.`);
     }
 
-    if (lastHistory.newStatus !== data.status) {
+    if (data.status !== undefined && lastHistory.newStatus !== data.status) {
       await this.solicitationHistoryService.create({
         id: undefined,
         solicitationId: id,

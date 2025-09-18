@@ -96,7 +96,7 @@ model Solicitation {
   examResultType ExamResultType? @default(PCR_QUALITATIVO)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt  
-  bloodCollectionTubeColor BloodCollectionTubeColor? @default(TAMPA_ROXA)    
+  bloodCollectionTubeColor String[]   
   userId   String?
   user     User?   @relation(fields: [userId], references: [id])
   solicitationHistories SolicitationHistory[]

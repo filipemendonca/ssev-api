@@ -1,4 +1,4 @@
-import { BloodCollectionTubeColor, SolicitationStatus } from "@prisma/client";
+import { SolicitationStatus } from "@prisma/client";
 
 export class SolicitationDto {
   id: string;
@@ -10,7 +10,7 @@ export class SolicitationDto {
   doctor: string;
   specie: string;
   hospitalVet: string;
-  bloodCollectionTubeColor: BloodCollectionTubeColor;
+  bloodCollectionTubeColor: string[];
   infectiousAgents: string[];
   samples: string[];
   exams: string[];
