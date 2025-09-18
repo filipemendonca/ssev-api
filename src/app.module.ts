@@ -7,6 +7,7 @@ import { SampleModule } from "./modules/sample/sample.module";
 import { UserModule } from "./modules/user/user.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { SolicitationHistoryModule } from "./modules/solicitationHistory/solicitation.history.module";
+import { ExamsResultTemplateModule } from "./modules/examsResultTemplate/exams.result.template.module";
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { SolicitationHistoryModule } from "./modules/solicitationHistory/solicit
     InfectiousAgentsModule,
     SolicitationModule,
     SolicitationHistoryModule,
+    ExamsResultTemplateModule,
   ],
   providers: [PrismaService],
 })

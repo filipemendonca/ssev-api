@@ -58,7 +58,7 @@ export class ExamsController {
     const exams = await this.service.findAll(query, filter);
 
     if (!exams) {
-      throw new NotFoundException(`Amostra não encontrada.`);
+      throw new NotFoundException(`Exame não encontrado.`);
     }
 
     return exams;
