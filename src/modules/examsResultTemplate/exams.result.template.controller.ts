@@ -8,7 +8,9 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from "@nestjs/common";
 import { Role } from "@prisma/client";
 import { Roles } from "../../common/decorators/roles.decorator";
@@ -21,6 +23,10 @@ import {
   ExamsResultTemplateFilterDto,
 } from "./dto/exams.result.template.dto";
 import { ExamsResultTemplateService } from "./exams.result.template.service";
+import { FileInterceptor } from "@nestjs/platform-express/multer";
+import { diskStorage } from "multer";
+import { extname } from "path";
+import { mkdirSync, existsSync } from "fs";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("examsResultTemplate")
@@ -71,8 +77,34 @@ export class ExamsResultTemplateController {
 
   @Post()
   @Roles(Role.ADMINISTRADOR)
+  @UseInterceptors(
+    FileInterceptor("file", {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          const uploadPath = "./template";
+          // cria a pasta se não existir
+          if (!existsSync(uploadPath)) {
+            mkdirSync(uploadPath, { recursive: true });
+          }
+          cb(null, uploadPath);
+        },
+        filename: (req, file, cb) => {
+          // gera nome único
+          cb(null, `${file.originalname}`);
+        },
+      }),
+      limits: { fileSize: 6 * 1024 * 1024 }, // 6 MB
+      fileFilter: (req, file, cb) => {
+        if (!file.originalname.endsWith(".docx")) {
+          return cb(new Error("Apenas arquivos .docx são permitidos!"), false);
+        }
+        cb(null, true);
+      },
+    })
+  )
   async create(
-    @Body() data: ExamsResultTemplateDto
+    @Body() data: any,
+    @UploadedFile() file: Express.Multer.File
   ): Promise<SuccessResponse<ExamsResultTemplateDto>> {
     const newTemplate = await this.service.create(data);
 
