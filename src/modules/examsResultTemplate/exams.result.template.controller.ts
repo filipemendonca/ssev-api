@@ -12,7 +12,10 @@ import {
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express/multer";
 import { Role } from "@prisma/client";
+import { existsSync, mkdirSync } from "fs";
+import { diskStorage } from "multer";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
@@ -23,10 +26,6 @@ import {
   ExamsResultTemplateFilterDto,
 } from "./dto/exams.result.template.dto";
 import { ExamsResultTemplateService } from "./exams.result.template.service";
-import { FileInterceptor } from "@nestjs/platform-express/multer";
-import { diskStorage } from "multer";
-import { extname } from "path";
-import { mkdirSync, existsSync } from "fs";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("examsResultTemplate")
@@ -103,10 +102,14 @@ export class ExamsResultTemplateController {
     })
   )
   async create(
-    @Body() data: any,
+    @Body() data: ExamsResultTemplateDto,
     @UploadedFile() file: Express.Multer.File
   ): Promise<SuccessResponse<ExamsResultTemplateDto>> {
-    const newTemplate = await this.service.create(data);
+    const newTemplate = await this.service.create({
+      name: data.name,
+      fileName: file.originalname,
+      filePath: file.path,
+    });
 
     if (newTemplate === null) {
       throw new NotFoundException(`Erro ao criar o template.`);
