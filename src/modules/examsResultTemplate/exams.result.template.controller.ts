@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,13 +9,15 @@ import {
   Post,
   Put,
   Query,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
+import { Response } from "express";
 import { FileInterceptor } from "@nestjs/platform-express/multer";
 import { Role } from "@prisma/client";
-import { existsSync, mkdirSync } from "fs";
+import { existsSync, mkdirSync, unlinkSync } from "fs";
 import { diskStorage } from "multer";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
@@ -26,6 +29,7 @@ import {
   ExamsResultTemplateFilterDto,
 } from "./dto/exams.result.template.dto";
 import { ExamsResultTemplateService } from "./exams.result.template.service";
+import { join } from "path";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("examsResultTemplate")
@@ -121,6 +125,31 @@ export class ExamsResultTemplateController {
     );
   }
 
+  @Get("download/:filename")
+  async downloadFile(
+    @Param("filename") filename: string,
+    @Res() res: Response
+  ) {
+    try {
+      const filePath = join(process.cwd(), "template", filename);
+
+      if (!existsSync(filePath)) {
+        throw new NotFoundException("Arquivo não encontrado!");
+      }
+
+      res.set({
+        "Content-Type":
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+      });
+
+      return res.sendFile(filePath);
+    } catch (error) {
+      console.error("Erro no download:", error);
+      throw new BadRequestException("Erro ao baixar o arquivo.");
+    }
+  }
+
   @Put(":id")
   @Roles(Role.ADMINISTRADOR)
   async update(
@@ -148,6 +177,29 @@ export class ExamsResultTemplateController {
 
     if (!existingTemplate) {
       throw new NotFoundException(`Template não encontrado.`);
+    }
+
+    if (existingTemplate.fileName) {
+      const filePath = join(
+        process.cwd(),
+        "template",
+        existingTemplate.fileName
+      );
+
+      if (existsSync(filePath)) {
+        try {
+          unlinkSync(filePath);
+          console.log(
+            `Arquivo ${existingTemplate.fileName} removido com sucesso.`
+          );
+        } catch (err) {
+          console.error("Erro ao remover o arquivo:", err);
+        }
+      } else {
+        console.warn(
+          `Arquivo ${existingTemplate.fileName} não encontrado no sistema.`
+        );
+      }
     }
 
     return new SuccessResponse<ExamsResultTemplateDto>(
