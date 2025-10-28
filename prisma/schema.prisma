@@ -13,6 +13,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum SolicitationResult {
+  POSITIVO
+  NEGATIVO
+  INDETERMINADO
+}
+
+enum SolicitationSampleQuality {
+  SATISFATORIA
+  INSATISFATORIA
+}
+
 enum Role {  
   ADMINISTRADOR
   VETERINARIO
@@ -94,6 +105,12 @@ model Solicitation {
   blockedAt DateTime?
   blockedCause String?
   examResultType ExamResultType? @default(PCR_QUALITATIVO)
+  solicitationResult SolicitationResult?
+  solicitationConclusionText String?
+  solicitationSampleConclusion String?
+  solicitationColectTypeConclusion String?
+  solicitationSampleQuality SolicitationSampleQuality?
+  solicitationClinicAvaliation String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt  
   bloodCollectionTubeColor String[]   

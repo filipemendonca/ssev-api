@@ -17,7 +17,7 @@ import {
 import { Response } from "express";
 import { FileInterceptor } from "@nestjs/platform-express/multer";
 import { Role } from "@prisma/client";
-import { existsSync, mkdirSync, unlinkSync } from "fs";
+import { existsSync, mkdirSync, unlinkSync } from "node:fs";
 import { diskStorage } from "multer";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
@@ -29,7 +29,7 @@ import {
   ExamsResultTemplateFilterDto,
 } from "./dto/exams.result.template.dto";
 import { ExamsResultTemplateService } from "./exams.result.template.service";
-import { join } from "path";
+import { join } from "node:path";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("examsResultTemplate")
