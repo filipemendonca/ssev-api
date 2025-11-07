@@ -141,4 +141,13 @@ model ExamResultTemplate {
   updatedAt DateTime @updatedAt    
 }
 
+model Variables {
+  id        String   @id @default(cuid())  
+  key       String   @unique
+  tableRelated     String?
+  fieldRelated     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt    
+}
+
 
