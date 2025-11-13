@@ -3,8 +3,8 @@ import { SolicitationRepository } from "./solicitation.repository";
 import { SolicitationDto } from "./dto/solicitation.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
-import { CurrentUserType } from "src/common/utils/current-user.util";
 import { Role } from "@prisma/client";
+import { CurrentUserType } from "../../common/utils/current-user.util";
 
 @Injectable()
 export class SolicitationService {

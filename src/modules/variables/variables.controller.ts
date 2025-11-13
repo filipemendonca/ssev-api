@@ -31,11 +31,6 @@ export class VariablesController {
     @Query() query: PaginationQueryDto
   ): Promise<SuccessResponse<VariablesDto[]>> {
     const data = await this.service.findAll(query);
-
-    if (data?.data?.length === 0) {
-      throw new NotFoundException(`Nenhum registro encontrado.`);
-    }
-
     return data;
   }
 

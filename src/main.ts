@@ -1,11 +1,11 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import * as dotenv from "dotenv";
-import * as path from "path";
+import * as path from "node:path";
 import { AllExceptionsFilter } from "./common/filters/http-exception.filter";
 import { LoggingInterceptor } from "./common/interceptors/logging.interceptors";
 import { ValidationPipe } from "@nestjs/common";
-import * as cookieParser from "cookie-parser";
+import cookieParser = require("cookie-parser");
 
 async function bootstrap() {
   const envFile =
