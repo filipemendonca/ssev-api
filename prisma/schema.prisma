@@ -143,7 +143,7 @@ model ExamResultTemplate {
 
 model Variables {
   id        String   @id @default(cuid())  
-  key       String   @unique
+  variableName       String   @unique
   tableRelated     String?
   fieldRelated     String?
   createdAt DateTime @default(now())

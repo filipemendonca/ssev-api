@@ -53,13 +53,14 @@ export class VariablesController {
   }
 
   @Get("dropdown/listRelatedFields")
-  async listRelatedFields(): Promise<SuccessResponse<string[]>> {
+  async listRelatedFields(): Promise<string[]> {
     const mappedColumns = await mapColumns(
       await this.service.listColumns("Solicitation")
     );
-    return new SuccessResponse<string[]>(
-      Object.entries(mappedColumns).map(([key, value]) => `${value}`)
-    );
+    // return new SuccessResponse<string[]>(
+    //   Object.entries(mappedColumns).map(([key, value]) => `${value}`)
+    // );
+    return Object.entries(mappedColumns).map(([key, value]) => `${value}`);
   }
 
   @Post()

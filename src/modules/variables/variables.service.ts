@@ -37,7 +37,7 @@ export class VariablesService {
   }
 
   public async create(data: VariablesDto): Promise<VariablesDto> {
-    const hasKey = await this.repo.validateIfHasVariable(data.key);
+    const hasKey = await this.repo.validateIfHasVariable(data.variableName);
 
     if (hasKey !== 0) {
       throw new UnprocessableEntityException(

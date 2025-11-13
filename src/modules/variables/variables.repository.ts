@@ -12,8 +12,8 @@ export class VariablesRepository extends BaseRepository<
     super(prisma, (p) => p.variables);
   }
 
-  public async validateIfHasVariable(key: string): Promise<number> {
-    return await this.prisma.variables.count({ where: { key } });
+  public async validateIfHasVariable(variableName: string): Promise<number> {
+    return await this.prisma.variables.count({ where: { variableName } });
   }
 
   async listDataBaseTables(): Promise<string[]> {

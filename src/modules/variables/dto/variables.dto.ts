@@ -1,6 +1,6 @@
 export type VariablesDto = {
   id: string;
-  key: string;
+  variableName: string;
   tableRelated?: string;
   fieldRelated?: string;
   createdAt: Date;
