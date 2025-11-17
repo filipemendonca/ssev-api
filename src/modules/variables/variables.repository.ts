@@ -25,11 +25,21 @@ export class VariablesRepository extends BaseRepository<
   }
 
   async listColumnsFromTable(tabela: string): Promise<any> {
+    const excludedColumns = `'id',
+    'createdat',
+    'updatedat',
+    'canceledat',
+    'finishedat',
+    'blockedat',
+    'blockedcause',
+    'canceledcause',
+    'userid'`;
+
     const result = await this.prisma.$queryRawUnsafe(`
       SELECT 
         column_name        
       FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = '${tabela}';
+      WHERE table_schema = 'public' AND table_name = '${tabela}' AND lower(column_name) NOT IN (${excludedColumns});
     `);
 
     return result;

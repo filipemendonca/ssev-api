@@ -15,6 +15,8 @@ const translations: Record<string, string> = {
   specie: "Espécie",
   samples: "Amostras",
   exams: "Exames",
+  examResultType: "Tipo de Resultado do Exame",
+  infectiousAgents: "Agentes Infecciosos",
   bloodCollectionTubeColor: "Cor do Tubo de Coleta de Sangue",
   solicitationClinicAvaliation: "Avaliação Clínica da Solicitação",
   solicitationColectTypeConclusion: "Tipo de Coleta da Solicitação (Conslusão)",
@@ -35,7 +37,6 @@ function beautifyName(column: string): string {
 export async function mapColumns(
   response: ColumnResponse
 ): Promise<Record<string, string>> {
-  const teste = response;
   if (!response.length) {
     return {};
   }
