@@ -1,4 +1,4 @@
-type ColumnResponse = { column_name: string }[];
+export type ColumnResponse = { column_name: string }[];
 
 const translations: Record<string, string> = {
   gender: "Gênero",

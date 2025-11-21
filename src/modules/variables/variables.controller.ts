@@ -12,13 +12,13 @@ import {
 } from "@nestjs/common";
 import { Role } from "@prisma/client";
 import { Roles } from "../../common/decorators/roles.decorator";
-import { JwtAuthGuard } from "../auth/guards/auth.guard";
-import { RolesGuard } from "../auth/guards/roles.guard";
-import { VariablesService } from "./variables.service";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
+import { JwtAuthGuard } from "../auth/guards/auth.guard";
+import { RolesGuard } from "../auth/guards/roles.guard";
 import { VariablesDto } from "./dto/variables.dto";
 import { mapColumns } from "./util/util";
+import { VariablesService } from "./variables.service";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("variables")
@@ -53,14 +53,15 @@ export class VariablesController {
   }
 
   @Get("dropdown/listRelatedFields")
-  async listRelatedFields(): Promise<string[]> {
+  async listRelatedFields(): Promise<{ value: string; label: string }[]> {
     const mappedColumns = await mapColumns(
       await this.service.listColumns("Solicitation")
     );
-    // return new SuccessResponse<string[]>(
-    //   Object.entries(mappedColumns).map(([key, value]) => `${value}`)
-    // );
-    return Object.entries(mappedColumns).map(([key, value]) => `${value}`);
+
+    return Object.entries(mappedColumns).map(([key, value]) => ({
+      value: key,
+      label: value,
+    }));
   }
 
   @Post()

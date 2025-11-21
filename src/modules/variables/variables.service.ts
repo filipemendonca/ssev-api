@@ -4,6 +4,7 @@ import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { VariablesDto } from "./dto/variables.dto";
 import { VariablesRepository } from "./variables.repository";
+import { ColumnResponse } from "./util/util";
 
 @Injectable()
 export class VariablesService {
@@ -60,7 +61,7 @@ export class VariablesService {
     return await this.repo.listDataBaseTables();
   }
 
-  async listColumns(table: string): Promise<any> {
+  async listColumns(table: string): Promise<ColumnResponse> {
     return await this.repo.listColumnsFromTable(table);
   }
 }

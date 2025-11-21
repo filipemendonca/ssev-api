@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { Prisma, Variables } from "@prisma/client";
 import { BaseRepository } from "../../common/base.repository";
 import { PrismaService } from "../../../prisma/prisma.service";
+import { ColumnResponse } from "./util/util";
 
 @Injectable()
 export class VariablesRepository extends BaseRepository<
@@ -24,7 +25,7 @@ export class VariablesRepository extends BaseRepository<
     return result.map((r) => r.table_name);
   }
 
-  async listColumnsFromTable(tabela: string): Promise<any> {
+  async listColumnsFromTable(tabela: string): Promise<ColumnResponse> {
     const excludedColumns = `'id',
     'createdat',
     'updatedat',
@@ -35,7 +36,7 @@ export class VariablesRepository extends BaseRepository<
     'canceledcause',
     'userid'`;
 
-    const result = await this.prisma.$queryRawUnsafe(`
+    const result = await this.prisma.$queryRawUnsafe<ColumnResponse>(`
       SELECT 
         column_name        
       FROM information_schema.columns
