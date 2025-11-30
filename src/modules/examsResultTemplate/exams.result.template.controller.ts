@@ -109,6 +109,14 @@ export class ExamsResultTemplateController {
     @Body() data: ExamsResultTemplateDto,
     @UploadedFile() file: Express.Multer.File
   ): Promise<SuccessResponse<ExamsResultTemplateDto>> {
+    const existingData = await this.service.findFirst();
+
+    if (existingData) {
+      throw new NotFoundException(
+        `Só é permitido o cadastro de 1 template na aplicação.`
+      );
+    }
+
     const newTemplate = await this.service.create({
       name: data.name,
       fileName: file.originalname,
