@@ -9,25 +9,33 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from "@nestjs/common";
-import { SolicitationStatus } from "@prisma/client";
+import { Exams, SolicitationStatus } from "@prisma/client";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
+import { CurrentUserType } from "../../common/utils/current-user.util";
 import { JwtAuthGuard } from "../auth/guards/auth.guard";
+import { DocxService } from "../docx/docx-service";
 import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
+import { VariablesService } from "../variables/variables.service";
 import { SolicitationDto } from "./dto/solicitation.dto";
 import { SolicitationService } from "./solicitation.service";
 import { validateEditSolicitation } from "./util/solicitation-configure-edit";
-import { CurrentUserType } from "../../common/utils/current-user.util";
-import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { Response } from "express";
+import { ExamsResultTemplateService } from "../examsResultTemplate/exams.result.template.service";
 
 @UseGuards(JwtAuthGuard)
 @Controller("solicitation")
 export class SolicitationController {
   constructor(
     private readonly service: SolicitationService,
-    private readonly solicitationHistoryService: SolicitationHistoryService
+    private readonly solicitationHistoryService: SolicitationHistoryService,
+    private readonly variableService: VariablesService,
+    private readonly examsResultTemplateService: ExamsResultTemplateService,
+    private readonly docxService: DocxService
   ) {}
 
   @Get()
@@ -228,5 +236,28 @@ export class SolicitationController {
     }
 
     return new SuccessResponse<SolicitationDto>(await this.service.delete(id));
+  }
+
+  @Get("document/generate-docx/:solicitationId")
+  async generate(
+    @Res() res: Response,
+    @Param("solicitationId") solicitationId: string
+  ) {
+    const variables = await this.variableService.findAllWithoutPagination();
+    const template = await this.examsResultTemplateService.findFirst();
+    const solicitation = await this.service.findOne(solicitationId);
+
+    const buffer = await this.docxService.generateDocument(
+      variables,
+      template.fileName,
+      solicitation
+    );
+
+    res.attachment(template.fileName); // << força download
+    res.type(
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+
+    res.send(buffer);
   }
 }

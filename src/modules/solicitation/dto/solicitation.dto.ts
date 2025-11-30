@@ -1,4 +1,8 @@
-import { SolicitationStatus } from "@prisma/client";
+import {
+  SolicitationResult,
+  SolicitationSampleQuality,
+  SolicitationStatus,
+} from "@prisma/client";
 
 export class SolicitationDto {
   id: string;
@@ -22,4 +26,10 @@ export class SolicitationDto {
   createdAt: Date;
   updatedAt: Date;
   blockedAt: Date;
+  solicitationResult?: SolicitationResult;
+  solicitationConclusionText: string;
+  solicitationSampleConclusion: string;
+  solicitationColectTypeConclusion: string;
+  solicitationSampleQuality?: SolicitationSampleQuality;
+  solicitationClinicAvaliation: string;
 }

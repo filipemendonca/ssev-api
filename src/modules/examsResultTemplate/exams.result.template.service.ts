@@ -39,6 +39,10 @@ export class ExamsResultTemplateService {
     return await this.repo.findById(id);
   }
 
+  public async findFirst(): Promise<ExamsResultTemplateDto | null> {
+    return await this.repo.findFirst();
+  }
+
   public async create(
     data: ExamsResultTemplateDto
   ): Promise<ExamsResultTemplateDto> {

@@ -1,10 +1,9 @@
 import { Injectable, UnprocessableEntityException } from "@nestjs/common";
-import { hash } from "bcrypt";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { VariablesDto } from "./dto/variables.dto";
-import { VariablesRepository } from "./variables.repository";
 import { ColumnResponse } from "./util/util";
+import { VariablesRepository } from "./variables.repository";
 
 @Injectable()
 export class VariablesService {
@@ -23,6 +22,17 @@ export class VariablesService {
       totalPages,
       hasNextPage,
     });
+  }
+
+  public async findAllWithoutPagination(): Promise<Record<string, string>> {
+    const variablesFromDb = await this.repo.findAllWithoutPagination();
+    if (variablesFromDb.length !== 0) {
+      return variablesFromDb.reduce((acc, variable) => {
+        acc[variable.fieldRelated] = variable.variableName;
+        return acc;
+      }, {});
+    }
+    return {};
   }
 
   public async findOne(id: string): Promise<VariablesDto | null> {
