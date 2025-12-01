@@ -12,20 +12,20 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
-import { Exams, SolicitationStatus } from "@prisma/client";
+import { SolicitationStatus } from "@prisma/client";
+import { Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { CurrentUserType } from "../../common/utils/current-user.util";
 import { JwtAuthGuard } from "../auth/guards/auth.guard";
 import { DocxService } from "../docx/docx-service";
+import { ExamsResultTemplateService } from "../examsResultTemplate/exams.result.template.service";
 import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
 import { VariablesService } from "../variables/variables.service";
 import { SolicitationDto } from "./dto/solicitation.dto";
 import { SolicitationService } from "./solicitation.service";
 import { validateEditSolicitation } from "./util/solicitation-configure-edit";
-import { Response } from "express";
-import { ExamsResultTemplateService } from "../examsResultTemplate/exams.result.template.service";
 
 @UseGuards(JwtAuthGuard)
 @Controller("solicitation")

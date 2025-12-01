@@ -16,7 +16,7 @@ export async function replaceVariablesInDocx(
 
   for (const key in variables) {
     const value = variables[key];
-    const regex = new RegExp(`##${key}##`, "g");
+    const regex = new RegExp(`${key}`, "g");
     newXml = newXml.replace(regex, value);
   }
 
