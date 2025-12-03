@@ -235,7 +235,11 @@ export class SolicitationController {
       throw new NotFoundException(`Solicitação não encontrada.`);
     }
 
-    return new SuccessResponse<SolicitationDto>(await this.service.delete(id));
+    existingData.isDeleted = true;
+
+    return new SuccessResponse<SolicitationDto>(
+      await this.service.update(id, existingData)
+    );
   }
 
   @Get("document/generate-docx/:solicitationId")

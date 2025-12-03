@@ -16,6 +16,8 @@ export class SolicitationService {
   ): Promise<SuccessResponse<SolicitationDto[]>> {
     const where: any = {};
 
+    where.isDeleted = false;
+
     if (user?.role === Role.VETERINARIO && user?.id) {
       where.userId = user.id;
     }

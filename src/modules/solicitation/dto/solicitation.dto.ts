@@ -32,4 +32,5 @@ export class SolicitationDto {
   solicitationColectTypeConclusion: string;
   solicitationSampleQuality?: SolicitationSampleQuality;
   solicitationClinicAvaliation: string;
+  isDeleted: boolean;
 }
