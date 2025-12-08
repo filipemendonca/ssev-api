@@ -4,6 +4,13 @@ import {
   SolicitationStatus,
 } from "@prisma/client";
 
+interface DateRange {
+  range: {
+    from: Date;
+    to: Date;
+  };
+}
+
 export class SolicitationDto {
   id: string;
   userId: string;
@@ -34,3 +41,10 @@ export class SolicitationDto {
   solicitationClinicAvaliation: string;
   isDeleted: boolean;
 }
+
+export type SolicitationFilterDto = {
+  tutor: string;
+  patient: string;
+  status: SolicitationStatus;
+  rangeDate: DateRange;
+};

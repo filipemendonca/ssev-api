@@ -23,7 +23,7 @@ import { DocxService } from "../docx/docx-service";
 import { ExamsResultTemplateService } from "../examsResultTemplate/exams.result.template.service";
 import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
 import { VariablesService } from "../variables/variables.service";
-import { SolicitationDto } from "./dto/solicitation.dto";
+import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
 import { SolicitationService } from "./solicitation.service";
 import { validateEditSolicitation } from "./util/solicitation-configure-edit";
 
@@ -75,6 +75,20 @@ export class SolicitationController {
 
       return new SuccessResponse<SolicitationDto>(solicitation);
     }
+  }
+
+  @Post("/search")
+  async search(
+    @Query() query: PaginationQueryDto,
+    @Body() filter: SolicitationFilterDto
+  ): Promise<SuccessResponse<SolicitationDto[]>> {
+    const solicitations = await this.service.findAll(query, null, filter);
+
+    if (!solicitations) {
+      throw new NotFoundException(`Amostra não encontrada.`);
+    }
+
+    return solicitations;
   }
 
   @Post()

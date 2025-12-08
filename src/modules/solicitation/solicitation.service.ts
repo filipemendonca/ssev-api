@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { SolicitationRepository } from "./solicitation.repository";
-import { SolicitationDto } from "./dto/solicitation.dto";
+import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { Role } from "@prisma/client";
@@ -12,7 +12,8 @@ export class SolicitationService {
 
   public async findAll(
     pagination: PaginationQueryDto,
-    user?: CurrentUserType
+    user?: CurrentUserType,
+    filter?: SolicitationFilterDto
   ): Promise<SuccessResponse<SolicitationDto[]>> {
     const where: any = {};
 
@@ -20,6 +21,25 @@ export class SolicitationService {
 
     if (user?.role === Role.VETERINARIO && user?.id) {
       where.userId = user.id;
+    }
+
+    if (filter?.tutor) {
+      where.tutor = { contains: filter.tutor, mode: "insensitive" };
+    }
+
+    if (filter?.patient) {
+      where.patient = { contains: filter.patient, mode: "insensitive" };
+    }
+
+    if (filter?.status) {
+      where.status = filter.status;
+    }
+
+    if (filter?.rangeDate) {
+      where.createdAt = {
+        gte: filter.rangeDate.range.from,
+        lte: filter.rangeDate.range.to,
+      };
     }
 
     const { items, total, hasNextPage, totalPages } = await this.repo.findAll(
