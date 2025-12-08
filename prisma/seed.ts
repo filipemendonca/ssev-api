@@ -17,7 +17,6 @@ async function main() {
     data: [
       {
         name: "admin",
-        username: "admin",
         email: "admin@example.com",
         isActive: true,
         role: Role.ADMINISTRADOR,
@@ -25,7 +24,6 @@ async function main() {
       },
       {
         name: "laboratorio",
-        username: "laboratorio",
         email: "laboratorio@example.com",
         isActive: true,
         role: Role.VETERINARIO,
@@ -33,7 +31,6 @@ async function main() {
       },
       {
         name: "patologista",
-        username: "patologista",
         email: "patologista@example.com",
         isActive: true,
         role: Role.PATOLOGISTA,

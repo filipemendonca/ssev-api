@@ -13,6 +13,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum SolicitationResult {
+  POSITIVO
+  NEGATIVO
+  INDETERMINADO
+}
+
+enum SolicitationSampleQuality {
+  SATISFATORIA
+  INSATISFATORIA
+}
+
 enum Role {  
   ADMINISTRADOR
   VETERINARIO
@@ -36,32 +47,36 @@ enum SolicitationStatus {
   CANCELADO  
 }
 
+enum ExamResultType {
+  PCR_QUALITATIVO
+  PCR_QUANTITATIVO
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String?
-  username  String?  @unique
   email     String?  @unique
   password  String?
   isActive  Boolean @default(true)
   role      Role? @default(VETERINARIO)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @updatedAt  
+  solicitations Solicitation[]
+  solicitationHistories SolicitationHistory[]
 }
 
 model Sample {
   id        String   @id @default(cuid())
   name      String?  @unique
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  solicitations Solicitation[]
+  updatedAt DateTime @updatedAt  
 }
 
 model Exams {
   id        String   @id @default(cuid())
   name      String?  @unique
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt  
-  solicitations Solicitation[]
+  updatedAt DateTime @updatedAt    
 }
 
 model InfectiousAgents {
@@ -72,25 +87,68 @@ model InfectiousAgents {
 }
 
 model Solicitation {
-  id         String   @id @default(cuid())
+  id         String   @id @default(cuid())  
   tutor      String?  
   patient    String?
   gender     String?
-  age        Int?
+  age        String?
   doctor     String?
-  species   String?
+  specie   String?
   hospitalVet   String?  
   infectiousAgents String[]
-  sampleId String?
-  examsId String?
+  samples String[]
+  exams String[]
   status     SolicitationStatus @default(CRIADO)
   finishedAt DateTime?
   canceledAt DateTime?
+  canceledCause String?
+  blockedAt DateTime?
+  blockedCause String?
+  examResultType ExamResultType? @default(PCR_QUALITATIVO)
+  solicitationResult SolicitationResult?
+  solicitationConclusionText String?
+  solicitationSampleConclusion String?
+  solicitationColectTypeConclusion String?
+  solicitationSampleQuality SolicitationSampleQuality?
+  solicitationClinicAvaliation String?
+  isDeleted  Boolean @default(false)
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  bloodCollectionTubeColor BloodCollectionTubeColor? @default(TAMPA_ROXA)
-  exams      Exams? @relation(fields: [examsId], references: [id])
-  sample     Sample? @relation(fields: [sampleId], references: [id])  
+  updatedAt  DateTime @updatedAt  
+  bloodCollectionTubeColor String[]   
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id])
+  solicitationHistories SolicitationHistory[]
+}
+
+model SolicitationHistory {
+  id        String   @id @default(cuid())  
+  solicitationId String
+  previousStatus SolicitationStatus?
+  newStatus SolicitationStatus
+  blockedCause String?  
+  changedAt DateTime @default(now())  
+  changedById String
+  changedBy User @relation(fields: [changedById], references: [id])
+  
+  solicitation Solicitation @relation(fields: [solicitationId], references: [id])
+}
+
+model ExamResultTemplate {
+  id        String   @id @default(cuid())  
+  name      String?  @unique
+  fileName  String?
+  filePath  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt    
+}
+
+model Variables {
+  id        String   @id @default(cuid())  
+  variableName       String   @unique
+  tableRelated     String?
+  fieldRelated     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt    
 }
 
 

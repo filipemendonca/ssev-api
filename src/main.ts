@@ -1,7 +1,11 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import * as dotenv from "dotenv";
-import * as path from "path";
+import * as path from "node:path";
+import { AllExceptionsFilter } from "./common/filters/http-exception.filter";
+import { LoggingInterceptor } from "./common/interceptors/logging.interceptors";
+import { ValidationPipe } from "@nestjs/common";
+import cookieParser = require("cookie-parser");
 
 async function bootstrap() {
   const envFile =
@@ -9,8 +13,21 @@ async function bootstrap() {
   dotenv.config({ path: path.resolve(process.cwd(), envFile) });
 
   const app = await NestFactory.create(AppModule);
-  await app.listen(3000);
 
-  app.enableCors();
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+
+  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalInterceptors(new LoggingInterceptor());
+
+  app.enableCors({
+    origin: "http://localhost:3000", // seu frontend
+    credentials: true, // permite envio de cookies/headers de autenticação
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    allowedHeaders: "Content-Type, Authorization",
+  });
+
+  app.use(cookieParser());
+
+  await app.listen(4000);
 }
 bootstrap();

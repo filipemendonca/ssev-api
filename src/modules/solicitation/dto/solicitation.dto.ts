@@ -1,21 +1,50 @@
-import { BloodCollectionTubeColor, SolicitationStatus } from "@prisma/client";
+import {
+  SolicitationResult,
+  SolicitationSampleQuality,
+  SolicitationStatus,
+} from "@prisma/client";
+
+interface DateRange {
+  range: {
+    from: Date;
+    to: Date;
+  };
+}
 
 export class SolicitationDto {
   id: string;
+  userId: string;
   tutor: string;
   patient: string;
   gender: string;
-  age: number;
+  age: string;
   doctor: string;
-  species: string;
+  specie: string;
   hospitalVet: string;
-  bloodCollectionTubeColor: BloodCollectionTubeColor;
+  bloodCollectionTubeColor: string[];
   infectiousAgents: string[];
-  sampleId: string;
-  examsId: string;
+  samples: string[];
+  exams: string[];
+  canceledCause: string;
+  blockedCause: string;
   status: SolicitationStatus;
   finishedAt: Date;
   canceledAt: Date;
   createdAt: Date;
   updatedAt: Date;
+  blockedAt: Date;
+  solicitationResult?: SolicitationResult;
+  solicitationConclusionText: string;
+  solicitationSampleConclusion: string;
+  solicitationColectTypeConclusion: string;
+  solicitationSampleQuality?: SolicitationSampleQuality;
+  solicitationClinicAvaliation: string;
+  isDeleted: boolean;
 }
+
+export type SolicitationFilterDto = {
+  tutor: string;
+  patient: string;
+  status: SolicitationStatus;
+  rangeDate: DateRange;
+};

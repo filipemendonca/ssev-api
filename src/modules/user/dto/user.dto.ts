@@ -1,10 +1,11 @@
+import { Role } from "@prisma/client";
+
 export type UserDto = {
   id: string;
   name: string;
-  username: string;
   email: string;
   isActive: boolean;
-  roleId: string;
+  role: Role;
   password: string;
   createdAt: Date;
   updatedAt: Date;

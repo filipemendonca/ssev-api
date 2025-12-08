@@ -1,36 +1,101 @@
 import { PrismaClient } from "@prisma/client";
+import { PaginationQueryDto } from "./dto/pagination-query.dto";
 
-export class BaseRepository<T> {
-  protected readonly model: any;
+type WhereArg<TDelegate extends DelegateMethods> =
+  NonNullable<Parameters<TDelegate["findMany"]>[0]> extends { where?: infer W }
+    ? W
+    : never;
+
+type DelegateMethods = {
+  findMany: (...args: any[]) => any;
+  count: (...args: any[]) => any;
+  findFirst: (...args: any[]) => any;
+  findUnique: (...args: any[]) => any;
+  create: (...args: any[]) => any;
+  update: (...args: any[]) => any;
+  delete: (...args: any[]) => any;
+};
+
+export class BaseRepository<TDelegate extends DelegateMethods, TEntity> {
+  protected readonly model: TDelegate;
 
   constructor(
     protected readonly prisma: PrismaClient,
-    modelAccessor: (prisma: PrismaClient) => any
+    modelAccessor: (prisma: PrismaClient) => TDelegate
   ) {
     this.model = modelAccessor(prisma);
   }
 
-  async findAll(params?: any): Promise<T[]> {
-    return this.model.findMany(params);
+  async findAll(pagination: PaginationQueryDto, filters?: WhereArg<TDelegate>) {
+    const { limit, currentPage } = pagination;
+
+    const skip = (currentPage - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      this.model.findMany({
+        where: filters,
+        orderBy: [
+          {
+            createdAt: "desc",
+          },
+          {
+            updatedAt: "desc",
+          },
+        ],
+        skip: skip,
+        take: limit,
+      }),
+      this.model.count(),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNextPage =
+      (pagination.currentPage - 1) * pagination.limit + pagination.limit <
+      total;
+
+    return { items: items as TEntity[], total, totalPages, hasNextPage };
   }
 
-  async findOne(params: any): Promise<T | null> {
+  async findAllWithoutPagination(filters?: WhereArg<TDelegate>, include?: any) {
+    const items = await this.model.findMany({
+      where: filters,
+      include: include,
+    });
+    return items as TEntity[];
+  }
+
+  async findOne(params: any): Promise<TEntity | null> {
     return this.model.findFirst(params);
   }
 
-  async findById(id: string): Promise<T | null> {
+  async findFirst(
+    filters?: WhereArg<TDelegate>,
+    orderBy?: any[]
+  ): Promise<TEntity | null> {
+    return this.model.findFirst({ where: filters, orderBy: orderBy });
+  }
+
+  async findById(id: string): Promise<TEntity | null> {
     return this.model.findUnique({ where: { id } });
   }
 
-  async create(data: Partial<T>): Promise<T> {
+  async findMany(params: any): Promise<TEntity[] | null> {
+    return await this.model.findMany(params);
+  }
+
+  async create(data: Partial<TEntity>): Promise<TEntity> {
     return this.model.create({ data });
   }
 
-  async update(id: string, data: Partial<T>): Promise<T> {
-    return this.model.update({ where: { id }, data });
+  async update(id: string, data: Partial<TEntity>): Promise<TEntity> {
+    try {
+      return this.model.update({ where: { id }, data });
+    } catch (error) {
+      console.log(error);
+    }
   }
 
-  async delete(id: string): Promise<T> {
+  async delete(id: string): Promise<TEntity> {
     return this.model.delete({ where: { id } });
   }
 }

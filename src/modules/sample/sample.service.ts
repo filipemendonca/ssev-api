@@ -1,21 +1,51 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { SampleRepository } from "./sample.repository";
-import { SampleDto } from "./dto/sample.dto";
+import { SampleDto, SampleFilterDto } from "./dto/sample.dto";
+import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
+import { SuccessResponse } from "../../common/dto/response.dto";
 
 @Injectable()
 export class SampleService {
   constructor(private readonly repo: SampleRepository) {}
 
-  public async findAll(): Promise<SampleDto[]> {
-    return await this.repo.findAll();
+  public async findAll(
+    pagination: PaginationQueryDto,
+    filter?: SampleFilterDto
+  ): Promise<SuccessResponse<SampleDto[]>> {
+    const where: any = {};
+
+    if (filter?.name) {
+      where.name = { contains: filter.name, mode: "insensitive" };
+    }
+
+    const { items, total, totalPages, hasNextPage } = await this.repo.findAll(
+      pagination,
+      where
+    );
+
+    return new SuccessResponse(items, null, {
+      total,
+      limit: pagination.limit,
+      currentPage: pagination.currentPage,
+      totalPages,
+      hasNextPage,
+    });
   }
 
-  public async findOne(id: string): Promise<SampleDto | null> {
+  public async findById(id: string): Promise<SampleDto | null> {
     return await this.repo.findById(id);
   }
 
   public async create(data: SampleDto): Promise<SampleDto> {
-    return this.repo.create(data);
+    const validateInputData = await this.repo.validateIfHasName(data.name);
+
+    if (validateInputData !== 0) {
+      throw new UnprocessableEntityException(
+        "Já existe um registro com o mesmo nome."
+      );
+    }
+
+    return await this.repo.create(data);
   }
 
   public async update(id: string, data: SampleDto): Promise<SampleDto> {

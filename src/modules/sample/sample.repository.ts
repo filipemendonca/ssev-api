@@ -1,11 +1,18 @@
 import { Injectable } from "@nestjs/common";
-import { Sample } from "@prisma/client";
+import { Prisma, Sample } from "@prisma/client";
 import { BaseRepository } from "../../common/base.repository";
-import { PrismaService } from "prisma/prisma.service";
+import { PrismaService } from "../../../prisma/prisma.service";
 
 @Injectable()
-export class SampleRepository extends BaseRepository<Sample> {
+export class SampleRepository extends BaseRepository<
+  Prisma.SampleDelegate,
+  Sample
+> {
   constructor(prisma: PrismaService) {
     super(prisma, (p) => p.sample);
+  }
+
+  public async validateIfHasName(name: string): Promise<number> {
+    return await this.prisma.sample.count({ where: { name } });
   }
 }
