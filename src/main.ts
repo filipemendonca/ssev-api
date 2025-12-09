@@ -20,7 +20,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LoggingInterceptor());
 
   app.enableCors({
-    origin: "http://localhost:3000", // seu frontend
+    origin: process.env.FRONTEND_URL,
     credentials: true, // permite envio de cookies/headers de autenticação
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     allowedHeaders: "Content-Type, Authorization",
