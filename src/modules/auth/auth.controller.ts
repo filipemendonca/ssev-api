@@ -38,6 +38,7 @@ export class AuthController {
       secure: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       path: "/",
+      domain: process.env.COOKIE_DOMAIN,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 dias
     });
 
@@ -66,6 +67,7 @@ export class AuthController {
       secure: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       path: "/auth/refresh",
+      domain: process.env.COOKIE_DOMAIN,
     });
 
     return res.json({ access_token: accessToken, user });
@@ -79,6 +81,7 @@ export class AuthController {
       secure: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       path: "/",
+      domain: process.env.COOKIE_DOMAIN,
     });
 
     return { message: "Logout efetuado com sucesso" };
