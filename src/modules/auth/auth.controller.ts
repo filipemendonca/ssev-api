@@ -66,7 +66,7 @@ export class AuthController {
       httpOnly: true,
       secure: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-      path: "/auth/refresh",
+      path: "/",
       domain: process.env.COOKIE_DOMAIN,
     });
 
