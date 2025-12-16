@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { writeFileSync } from "node:fs";
-import { replaceVariablesInDocx } from "../../common/utils/docx-template";
-import { SolicitationDto } from "../solicitation/dto/solicitation.dto";
+import { replaceVariablesInDocx } from "../utils/docx-template";
+import { SolicitationDto } from "../../modules/solicitation/dto/solicitation.dto";
 
 @Injectable()
 export class DocxService {

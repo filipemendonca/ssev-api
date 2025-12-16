@@ -19,23 +19,27 @@ import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { CurrentUserType } from "../../common/utils/current-user.util";
 import { JwtAuthGuard } from "../auth/guards/auth.guard";
-import { DocxService } from "../docx/docx-service";
+import { DocxService } from "../../common/services/docx-service";
 import { ExamsResultTemplateService } from "../examsResultTemplate/exams.result.template.service";
 import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
 import { VariablesService } from "../variables/variables.service";
 import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
 import { SolicitationService } from "./solicitation.service";
 import { validateEditSolicitation } from "./util/solicitation-configure-edit";
+import { MailService } from "../../common/services/mail.service";
+import { UserService } from "../user/user.service";
 
 @UseGuards(JwtAuthGuard)
 @Controller("solicitation")
 export class SolicitationController {
   constructor(
     private readonly service: SolicitationService,
+    private readonly mailService: MailService,
     private readonly solicitationHistoryService: SolicitationHistoryService,
     private readonly variableService: VariablesService,
     private readonly examsResultTemplateService: ExamsResultTemplateService,
-    private readonly docxService: DocxService
+    private readonly docxService: DocxService,
+    private readonly userService: UserService
   ) {}
 
   @Get()
@@ -147,6 +151,40 @@ export class SolicitationController {
         blockedCause: data.blockedCause || null,
       });
     }
+
+    return new SuccessResponse<SolicitationDto>(
+      await this.service.update(id, data),
+      "Solicitação atualizada com sucesso."
+    );
+  }
+
+  @Patch("finish/:id")
+  async finishSolicitation(
+    @Param("id") id: string,
+    @Body() data: SolicitationDto,
+    @CurrentUser() user: CurrentUserType
+  ): Promise<SuccessResponse<SolicitationDto>> {
+    const existingData = await this.service.findOne(id);
+    const lastHistory =
+      await this.solicitationHistoryService.findLastBySolicitationId(id);
+
+    if (!existingData && !lastHistory) {
+      throw new NotFoundException(`Solicitação não encontrada.`);
+    }
+
+    if (data.status !== undefined && lastHistory.newStatus !== data.status) {
+      await this.solicitationHistoryService.create({
+        id: undefined,
+        solicitationId: id,
+        newStatus: data.status,
+        changedAt: new Date(),
+        changedById: user.id,
+        previousStatus: lastHistory.newStatus,
+        blockedCause: data.blockedCause || null,
+      });
+    }
+
+    await this.service.sendEmailToDoctor(id);
 
     return new SuccessResponse<SolicitationDto>(
       await this.service.update(id, data),
@@ -277,5 +315,10 @@ export class SolicitationController {
     );
 
     res.send(buffer);
+  }
+
+  @Post("document/send-report/:solicitationId")
+  async sendReport(@Param("solicitationId") solicitationId: string) {
+    await this.service.sendEmailToDoctor(solicitationId);
   }
 }

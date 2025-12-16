@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { PrismaService } from "../../../prisma/prisma.service";
-import { DocxService } from "../docx/docx-service";
+import { DocxService } from "../../common/services/docx-service";
 import { SolicitationHistoryRepository } from "../solicitationHistory/solicitation.history.repository";
 import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
 import { VariablesRepository } from "../variables/variables.repository";
@@ -10,6 +10,9 @@ import { SolicitationRepository } from "./solicitation.repository";
 import { SolicitationService } from "./solicitation.service";
 import { ExamsResultTemplateRepository } from "../examsResultTemplate/exams.result.template.repository";
 import { ExamsResultTemplateService } from "../examsResultTemplate/exams.result.template.service";
+import { MailService } from "../../common/services/mail.service";
+import { UserService } from "../user/user.service";
+import { UserRepository } from "../user/user.repository";
 
 @Module({
   providers: [
@@ -21,7 +24,10 @@ import { ExamsResultTemplateService } from "../examsResultTemplate/exams.result.
     VariablesRepository,
     ExamsResultTemplateService,
     ExamsResultTemplateRepository,
+    UserRepository,
     DocxService,
+    MailService,
+    UserService,
     PrismaService,
   ],
   controllers: [SolicitationController],
