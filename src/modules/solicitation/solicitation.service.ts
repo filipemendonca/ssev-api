@@ -3,13 +3,15 @@ import { SolicitationRepository } from "./solicitation.repository";
 import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
-import { Role } from "@prisma/client";
+import { Role, SolicitationStatus } from "@prisma/client";
 import { CurrentUserType } from "../../common/utils/current-user.util";
 import { VariablesService } from "../variables/variables.service";
 import { ExamsResultTemplateService } from "../examsResultTemplate/exams.result.template.service";
 import { UserService } from "../user/user.service";
 import { DocxService } from "../../common/services/docx-service";
 import { MailService } from "../../common/services/mail.service";
+import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
+import { SolicitationHistoryDto } from "../solicitationHistory/dto/solicitation.history.dto";
 
 @Injectable()
 export class SolicitationService {
@@ -19,6 +21,7 @@ export class SolicitationService {
     private readonly repo: SolicitationRepository,
     private readonly variableService: VariablesService,
     private readonly examsResultTemplateService: ExamsResultTemplateService,
+    private readonly solicitationHistoryService: SolicitationHistoryService,
     private readonly userService: UserService,
     private readonly docxService: DocxService,
     private readonly mailService: MailService
@@ -74,28 +77,152 @@ export class SolicitationService {
     return await this.repo.findById(id);
   }
 
-  public async create(data: SolicitationDto): Promise<SolicitationDto> {
-    return this.repo.create(data);
+  public async create(
+    data: SolicitationDto,
+    user: CurrentUserType
+  ): Promise<SolicitationDto> {
+    return await this.repo.transaction<SolicitationDto>(async (tx) => {
+      const solicitation = await this.repo.create(data);
+
+      await this.solicitationHistoryService.create({
+        id: undefined,
+        solicitationId: solicitation.id,
+        newStatus: solicitation.status,
+        changedAt: new Date(),
+        changedById: user.id,
+        previousStatus: null,
+        blockedCause: solicitation.blockedCause || null,
+      });
+
+      return solicitation;
+    });
   }
 
   public async update(
     id: string,
-    data: SolicitationDto
+    data: SolicitationDto,
+    user?: CurrentUserType,
+    isExecuteHistoryCheck = true
   ): Promise<SolicitationDto> {
-    return await this.repo.update(id, data);
+    return await this.repo.transaction<SolicitationDto>(async (tx) => {
+      const updatedSolicitation = await this.repo.update(id, data);
+
+      const lastHistory =
+        await this.solicitationHistoryService.findLastBySolicitationId(id);
+
+      if (
+        isExecuteHistoryCheck &&
+        data.status !== undefined &&
+        lastHistory.newStatus !== data.status
+      ) {
+        await this.solicitationHistoryService.create({
+          id: undefined,
+          solicitationId: id,
+          newStatus: data.status,
+          changedAt: new Date(),
+          changedById: user.id,
+          previousStatus: lastHistory.newStatus,
+          blockedCause: data.blockedCause || null,
+        });
+      }
+      return updatedSolicitation;
+    });
+  }
+
+  public async finishSolicitation(
+    id: string,
+    data: SolicitationDto,
+    user?: CurrentUserType
+  ): Promise<SolicitationDto> {
+    return await this.repo.transaction<SolicitationDto>(async (tx) => {
+      await this.sendEmailToDoctor(id);
+      return await this.update(id, data, user);
+    });
   }
 
   public async delete(id: string) {
     return await this.repo.delete(id);
   }
 
-  public async sendEmailToDoctor(id: string) {
-    try {
-      const solicitation = await this.repo.findById(id);
-      const variables = await this.variableService.findAllWithoutPagination();
-      const template = await this.examsResultTemplateService.findFirst();
-      const user = await this.userService.findOne(solicitation.userId);
+  public async blockUnblockSolititation(
+    id: string,
+    cause: Pick<SolicitationDto, "blockedCause">,
+    user: CurrentUserType,
+    existingData: SolicitationDto,
+    lastHistory: SolicitationHistoryDto
+  ): Promise<SolicitationDto> {
+    return await this.repo.transaction<SolicitationDto>(async (tx) => {
+      if (existingData.status !== SolicitationStatus.BLOQUEADO) {
+        await this.solicitationHistoryService.create({
+          id: undefined,
+          solicitationId: id,
+          newStatus: SolicitationStatus.BLOQUEADO,
+          changedAt: new Date(),
+          changedById: user.id,
+          previousStatus: existingData.status,
+          blockedCause: cause.blockedCause || null,
+        });
 
+        existingData.status = SolicitationStatus.BLOQUEADO;
+        existingData.blockedCause = cause.blockedCause;
+        existingData.blockedAt = new Date();
+      } else {
+        await this.solicitationHistoryService.create({
+          id: undefined,
+          solicitationId: id,
+          newStatus: lastHistory.newStatus, //Ultimo status anterior ao bloqueio
+          changedAt: new Date(),
+          changedById: user.id,
+          previousStatus: existingData.status,
+          blockedCause: null,
+        });
+
+        existingData.status = lastHistory.newStatus;
+        existingData.blockedCause = null;
+        existingData.blockedAt = null;
+      }
+
+      return await this.update(id, existingData, null, false);
+    });
+  }
+
+  public async cancelSolititation(
+    id: string,
+    cause: Pick<SolicitationDto, "canceledCause">,
+    user: CurrentUserType,
+    existingData: SolicitationDto
+  ): Promise<SolicitationDto> {
+    return await this.repo.transaction<SolicitationDto>(async (tx) => {
+      await this.solicitationHistoryService.create({
+        id: undefined,
+        solicitationId: id,
+        newStatus: SolicitationStatus.CANCELADO, //Ultimo status anterior ao bloqueio
+        changedAt: new Date(),
+        changedById: user.id,
+        previousStatus: existingData.status,
+        blockedCause: null,
+      });
+
+      existingData.status = SolicitationStatus.CANCELADO;
+      existingData.canceledCause = cause.canceledCause;
+      existingData.canceledAt = new Date();
+
+      return await this.update(id, existingData, null, false);
+    });
+  }
+
+  public async sendEmailToDoctor(id: string): Promise<boolean> {
+    const solicitation = await this.repo.findById(id);
+    const variables = await this.variableService.findAllWithoutPagination();
+    const template = await this.examsResultTemplateService.findFirst();
+    const user = await this.userService.findOne(solicitation.userId);
+
+    if (
+      solicitation !== null &&
+      user !== null &&
+      template !== null &&
+      variables !== null
+    ) {
       const buffer = await this.docxService.generateDocument(
         variables,
         template.fileName,
@@ -110,10 +237,33 @@ export class SolicitationService {
         solicitation.createdAt,
         buffer
       );
-    } catch (error) {
-      this.logger.error("Erro ao enviar o e-mail.", error);
-      throw error;
+      return true;
+    } else {
+      this.logger.warn("Não foi possível enviar o e-mail: dados incompletos.");
+      this.logger.debug(`Solicitação: ${JSON.stringify(solicitation)}`);
+      this.logger.debug(`Usuário: ${JSON.stringify(user)}`);
+      this.logger.debug(`Template: ${JSON.stringify(template)}`);
+      this.logger.debug(`Variáveis: ${JSON.stringify(variables)}`);
+      return false;
     }
+  }
+
+  public async generateDocumentBufferToDownload(
+    solicitationId: string,
+    templateFileName: string
+  ) {
+    return await this.repo.transaction<Buffer>(async (tx) => {
+      const variables = await this.variableService.findAllWithoutPagination();
+      const solicitation = await this.repo.findById(solicitationId);
+
+      const buffer = await this.docxService.generateDocument(
+        variables,
+        templateFileName,
+        solicitation
+      );
+
+      return buffer;
+    });
   }
 
   private async configureFinishSolicitationEmail(

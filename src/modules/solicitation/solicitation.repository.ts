@@ -13,4 +13,10 @@ export class SolicitationRepository extends BaseRepository<
   constructor(prisma: PrismaService) {
     super(prisma, (p) => p.solicitation);
   }
+
+  async transaction<T>(
+    fn: (prisma: Prisma.TransactionClient) => Promise<T>
+  ): Promise<T> {
+    return this.prisma.$transaction(fn);
+  }
 }

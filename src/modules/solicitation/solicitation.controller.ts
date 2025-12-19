@@ -4,6 +4,7 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  HttpException,
   NotFoundException,
   Param,
   Patch,
@@ -12,34 +13,25 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
-import { SolicitationStatus } from "@prisma/client";
 import { Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { CurrentUserType } from "../../common/utils/current-user.util";
 import { JwtAuthGuard } from "../auth/guards/auth.guard";
-import { DocxService } from "../../common/services/docx-service";
 import { ExamsResultTemplateService } from "../examsResultTemplate/exams.result.template.service";
 import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
-import { VariablesService } from "../variables/variables.service";
 import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
 import { SolicitationService } from "./solicitation.service";
 import { validateEditSolicitation } from "./util/solicitation-configure-edit";
-import { MailService } from "../../common/services/mail.service";
-import { UserService } from "../user/user.service";
 
 @UseGuards(JwtAuthGuard)
 @Controller("solicitation")
 export class SolicitationController {
   constructor(
     private readonly service: SolicitationService,
-    private readonly mailService: MailService,
     private readonly solicitationHistoryService: SolicitationHistoryService,
-    private readonly variableService: VariablesService,
-    private readonly examsResultTemplateService: ExamsResultTemplateService,
-    private readonly docxService: DocxService,
-    private readonly userService: UserService
+    private readonly examsResultTemplateService: ExamsResultTemplateService
   ) {}
 
   @Get()
@@ -101,21 +93,11 @@ export class SolicitationController {
     @CurrentUser() user: CurrentUserType
   ): Promise<SuccessResponse<SolicitationDto>> {
     try {
-      const newSolicitation = await this.service.create(data);
+      const newSolicitation = await this.service.create(data, user);
 
       if (newSolicitation === null) {
         throw new NotFoundException(`Erro ao criar a solicitação.`);
       }
-
-      await this.solicitationHistoryService.create({
-        id: undefined,
-        solicitationId: newSolicitation.id,
-        newStatus: newSolicitation.status,
-        changedAt: new Date(),
-        changedById: user.id,
-        previousStatus: null,
-        blockedCause: newSolicitation.blockedCause || null,
-      });
 
       return new SuccessResponse<SolicitationDto>(
         newSolicitation,
@@ -123,6 +105,7 @@ export class SolicitationController {
       );
     } catch (error) {
       console.error("Error creating solicitation:", error);
+      throw new HttpException("Erro ao criar a solicitação.", error.status);
     }
   }
 
@@ -132,30 +115,15 @@ export class SolicitationController {
     @Body() data: SolicitationDto,
     @CurrentUser() user: CurrentUserType
   ): Promise<SuccessResponse<SolicitationDto>> {
-    const existingData = await this.service.findOne(id);
-    const lastHistory =
-      await this.solicitationHistoryService.findLastBySolicitationId(id);
-
-    if (!existingData && !lastHistory) {
-      throw new NotFoundException(`Solicitação não encontrada.`);
+    try {
+      return new SuccessResponse<SolicitationDto>(
+        await this.service.update(id, data, user),
+        "Solicitação atualizada com sucesso."
+      );
+    } catch (error) {
+      console.error("Error updating solicitation:", error);
+      throw new HttpException("Erro ao atualizar a solicitação.", error.status);
     }
-
-    if (data.status !== undefined && lastHistory.newStatus !== data.status) {
-      await this.solicitationHistoryService.create({
-        id: undefined,
-        solicitationId: id,
-        newStatus: data.status,
-        changedAt: new Date(),
-        changedById: user.id,
-        previousStatus: lastHistory.newStatus,
-        blockedCause: data.blockedCause || null,
-      });
-    }
-
-    return new SuccessResponse<SolicitationDto>(
-      await this.service.update(id, data),
-      "Solicitação atualizada com sucesso."
-    );
   }
 
   @Patch("finish/:id")
@@ -164,32 +132,15 @@ export class SolicitationController {
     @Body() data: SolicitationDto,
     @CurrentUser() user: CurrentUserType
   ): Promise<SuccessResponse<SolicitationDto>> {
-    const existingData = await this.service.findOne(id);
-    const lastHistory =
-      await this.solicitationHistoryService.findLastBySolicitationId(id);
-
-    if (!existingData && !lastHistory) {
-      throw new NotFoundException(`Solicitação não encontrada.`);
+    try {
+      return new SuccessResponse<SolicitationDto>(
+        await this.service.finishSolicitation(id, data, user),
+        "Solicitação finalizada com sucesso."
+      );
+    } catch (error) {
+      console.error("Error to try finish solicitation:", error);
+      throw new HttpException("Erro ao finalizar a solicitação.", error.status);
     }
-
-    if (data.status !== undefined && lastHistory.newStatus !== data.status) {
-      await this.solicitationHistoryService.create({
-        id: undefined,
-        solicitationId: id,
-        newStatus: data.status,
-        changedAt: new Date(),
-        changedById: user.id,
-        previousStatus: lastHistory.newStatus,
-        blockedCause: data.blockedCause || null,
-      });
-    }
-
-    await this.service.sendEmailToDoctor(id);
-
-    return new SuccessResponse<SolicitationDto>(
-      await this.service.update(id, data),
-      "Solicitação atualizada com sucesso."
-    );
   }
 
   @Patch("blockUnblockSolicitation/:id")
@@ -209,39 +160,15 @@ export class SolicitationController {
       throw new NotFoundException(`Solicitação não encontrada.`);
     }
 
-    if (existingData.status !== SolicitationStatus.BLOQUEADO) {
-      await this.solicitationHistoryService.create({
-        id: undefined,
-        solicitationId: id,
-        newStatus: SolicitationStatus.BLOQUEADO,
-        changedAt: new Date(),
-        changedById: user.id,
-        previousStatus: existingData.status,
-        blockedCause: cause.blockedCause || null,
-      });
-
-      existingData.status = SolicitationStatus.BLOQUEADO;
-      existingData.blockedCause = cause.blockedCause;
-      existingData.blockedAt = new Date();
-    } else {
-      await this.solicitationHistoryService.create({
-        id: undefined,
-        solicitationId: id,
-        newStatus: lastHistory.newStatus, //Ultimo status anterior ao bloqueio
-        changedAt: new Date(),
-        changedById: user.id,
-        previousStatus: existingData.status,
-        blockedCause: null,
-      });
-
-      existingData.status = lastHistory.newStatus;
-      existingData.blockedCause = null;
-      existingData.blockedAt = null;
-    }
-
     return new SuccessResponse<SolicitationDto>(
-      await this.service.update(id, existingData),
-      "Solicitação atualizada com sucesso."
+      await this.service.blockUnblockSolititation(
+        id,
+        cause,
+        user,
+        existingData,
+        lastHistory
+      ),
+      "Solicitação bloqueada com sucesso."
     );
   }
 
@@ -257,23 +184,9 @@ export class SolicitationController {
       throw new NotFoundException(`Solicitação não encontrada.`);
     }
 
-    await this.solicitationHistoryService.create({
-      id: undefined,
-      solicitationId: id,
-      newStatus: SolicitationStatus.CANCELADO, //Ultimo status anterior ao bloqueio
-      changedAt: new Date(),
-      changedById: user.id,
-      previousStatus: existingData.status,
-      blockedCause: null,
-    });
-
-    existingData.status = SolicitationStatus.CANCELADO;
-    existingData.canceledCause = cause.canceledCause;
-    existingData.canceledAt = new Date();
-
     return new SuccessResponse<SolicitationDto>(
-      await this.service.update(id, existingData),
-      "Solicitação atualizada com sucesso."
+      await this.service.cancelSolititation(id, cause, user, existingData),
+      "Solicitação cancelada com sucesso."
     );
   }
 
@@ -290,35 +203,54 @@ export class SolicitationController {
     existingData.isDeleted = true;
 
     return new SuccessResponse<SolicitationDto>(
-      await this.service.update(id, existingData)
+      await this.service.update(id, existingData, null, true)
     );
   }
 
-  @Get("document/generate-docx/:solicitationId")
+  @Get("document/download/:solicitationId")
   async generate(
     @Res() res: Response,
     @Param("solicitationId") solicitationId: string
   ) {
-    const variables = await this.variableService.findAllWithoutPagination();
-    const template = await this.examsResultTemplateService.findFirst();
-    const solicitation = await this.service.findOne(solicitationId);
+    try {
+      const template = await this.examsResultTemplateService.findFirst();
 
-    const buffer = await this.docxService.generateDocument(
-      variables,
-      template.fileName,
-      solicitation
-    );
+      if (template === null) {
+        throw new NotFoundException(
+          `Template de resultado de exames não encontrado.`
+        );
+      }
 
-    res.attachment(template.fileName); // << força download
-    res.type(
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    );
+      const buffer = await this.service.generateDocumentBufferToDownload(
+        solicitationId,
+        template.fileName
+      );
 
-    res.send(buffer);
+      res.attachment(template.fileName); // << força download
+      res.type(
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      );
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error generating document:", error);
+      throw new HttpException("Erro ao gerar o documento.", error.status);
+    }
   }
 
   @Post("document/send-report/:solicitationId")
   async sendReport(@Param("solicitationId") solicitationId: string) {
-    await this.service.sendEmailToDoctor(solicitationId);
+    try {
+      const emailSented = await this.service.sendEmailToDoctor(solicitationId);
+      if (!emailSented) {
+        throw new HttpException("Erro ao enviar o e-mail.", 500);
+      }
+      return new SuccessResponse<SolicitationDto>(
+        { emailSented } as any,
+        "E-mail enviado com sucesso."
+      );
+    } catch (error) {
+      console.error("Error sending report email:", error);
+      throw new HttpException("Erro ao enviar o e-mail.", error.status);
+    }
   }
 }
