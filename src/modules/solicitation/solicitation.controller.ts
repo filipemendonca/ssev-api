@@ -212,29 +212,31 @@ export class SolicitationController {
     @Res() res: Response,
     @Param("solicitationId") solicitationId: string
   ) {
-    try {
-      const template = await this.examsResultTemplateService.findFirst();
+    const template = await this.examsResultTemplateService.findFirst();
 
-      if (template === null) {
-        throw new NotFoundException(
-          `Template de resultado de exames não encontrado.`
-        );
-      }
-
-      const buffer = await this.service.generateDocumentBufferToDownload(
-        solicitationId,
-        template.fileName
+    if (template === null) {
+      throw new NotFoundException(
+        `Template de resultado de exames não encontrado.`
       );
-
-      res.attachment(template.fileName); // << força download
-      res.type(
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      );
-      res.send(buffer);
-    } catch (error) {
-      console.error("Error generating document:", error);
-      throw new HttpException("Erro ao gerar o documento.", error.status);
     }
+
+    const buffer = await this.service.generateDocumentBufferToDownload(
+      solicitationId,
+      template.fileData
+    );
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${template.fileName}"`
+    );
+    res.setHeader("Content-Length", buffer.length);
+
+    res.end(buffer);
+    return;
   }
 
   @Post("document/send-report/:solicitationId")

@@ -225,7 +225,7 @@ export class SolicitationService {
     ) {
       const buffer = await this.docxService.generateDocument(
         variables,
-        template.fileName,
+        template.fileData,
         solicitation
       );
 
@@ -250,7 +250,7 @@ export class SolicitationService {
 
   public async generateDocumentBufferToDownload(
     solicitationId: string,
-    templateFileName: string
+    templateBuffer: Buffer | Uint8Array
   ) {
     return await this.repo.transaction<Buffer>(async (tx) => {
       const variables = await this.variableService.findAllWithoutPagination();
@@ -258,7 +258,7 @@ export class SolicitationService {
 
       const buffer = await this.docxService.generateDocument(
         variables,
-        templateFileName,
+        templateBuffer,
         solicitation
       );
 

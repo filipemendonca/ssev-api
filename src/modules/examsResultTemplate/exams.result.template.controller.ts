@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -14,11 +13,12 @@ import {
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
-import { Response } from "express";
 import { FileInterceptor } from "@nestjs/platform-express/multer";
 import { Role } from "@prisma/client";
-import { existsSync, mkdirSync, unlinkSync } from "node:fs";
-import { diskStorage } from "multer";
+import { Response } from "express";
+import { memoryStorage } from "multer";
+import { existsSync, unlinkSync } from "node:fs";
+import { join } from "node:path";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
@@ -29,7 +29,6 @@ import {
   ExamsResultTemplateFilterDto,
 } from "./dto/exams.result.template.dto";
 import { ExamsResultTemplateService } from "./exams.result.template.service";
-import { join } from "node:path";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("examsResultTemplate")
@@ -82,20 +81,7 @@ export class ExamsResultTemplateController {
   @Roles(Role.ADMINISTRADOR)
   @UseInterceptors(
     FileInterceptor("file", {
-      storage: diskStorage({
-        destination: (req, file, cb) => {
-          const uploadPath = "./template";
-          // cria a pasta se não existir
-          if (!existsSync(uploadPath)) {
-            mkdirSync(uploadPath, { recursive: true });
-          }
-          cb(null, uploadPath);
-        },
-        filename: (req, file, cb) => {
-          // gera nome único
-          cb(null, `${file.originalname}`);
-        },
-      }),
+      storage: memoryStorage(),
       limits: { fileSize: 6 * 1024 * 1024 }, // 6 MB
       fileFilter: (req, file, cb) => {
         if (!file.originalname.endsWith(".docx")) {
@@ -120,7 +106,8 @@ export class ExamsResultTemplateController {
     const newTemplate = await this.service.create({
       name: data.name,
       fileName: file.originalname,
-      filePath: file.path,
+      mimeType: file.mimetype,
+      fileData: file.buffer,
     });
 
     if (newTemplate === null) {
@@ -133,29 +120,25 @@ export class ExamsResultTemplateController {
     );
   }
 
-  @Get("download/:filename")
-  async downloadFile(
-    @Param("filename") filename: string,
-    @Res() res: Response
-  ) {
-    try {
-      const filePath = join(process.cwd(), "template", filename);
+  @Get("download/:id")
+  async downloadFile(@Param("id") id: string, @Res() res: Response) {
+    const template = await this.service.findOne(id);
 
-      if (!existsSync(filePath)) {
-        throw new NotFoundException("Arquivo não encontrado!");
-      }
-
-      res.set({
-        "Content-Type":
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-      });
-
-      return res.sendFile(filePath);
-    } catch (error) {
-      console.error("Erro no download:", error);
-      throw new BadRequestException("Erro ao baixar o arquivo.");
+    if (!template) {
+      throw new NotFoundException("Template não encontrado!");
     }
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${template.fileName}"`
+    );
+    res.setHeader("Content-Length", template.fileData.length);
+
+    res.end(template.fileData);
   }
 
   @Put(":id")
@@ -185,29 +168,6 @@ export class ExamsResultTemplateController {
 
     if (!existingTemplate) {
       throw new NotFoundException(`Template não encontrado.`);
-    }
-
-    if (existingTemplate.fileName) {
-      const filePath = join(
-        process.cwd(),
-        "template",
-        existingTemplate.fileName
-      );
-
-      if (existsSync(filePath)) {
-        try {
-          unlinkSync(filePath);
-          console.log(
-            `Arquivo ${existingTemplate.fileName} removido com sucesso.`
-          );
-        } catch (err) {
-          console.error("Erro ao remover o arquivo:", err);
-        }
-      } else {
-        console.warn(
-          `Arquivo ${existingTemplate.fileName} não encontrado no sistema.`
-        );
-      }
     }
 
     return new SuccessResponse<ExamsResultTemplateDto>(
