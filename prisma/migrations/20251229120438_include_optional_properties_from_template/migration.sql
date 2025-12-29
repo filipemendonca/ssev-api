@@ -1,5 +1,0 @@
--- AlterTable
-ALTER TABLE "ExamResultTemplate" ALTER COLUMN "name" DROP NOT NULL,
-ALTER COLUMN "fileName" DROP NOT NULL,
-ALTER COLUMN "fileData" DROP NOT NULL,
-ALTER COLUMN "mimeType" DROP NOT NULL;
