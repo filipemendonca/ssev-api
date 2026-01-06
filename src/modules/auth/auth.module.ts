@@ -8,6 +8,8 @@ import { UserService } from "../user/user.service";
 import { UserRepository } from "../user/user.repository";
 import { AuthController } from "./auth.controller";
 import { PrismaService } from "../../../prisma/prisma.service";
+import { GoogleAuthController } from "../googleOAuth/google.auth.controller";
+import { GoogleOAuthService } from "../../common/services/google-oauth.service";
 
 @Module({
   imports: [
@@ -24,8 +26,9 @@ import { PrismaService } from "../../../prisma/prisma.service";
     UserService,
     UserRepository,
     PrismaService,
+    GoogleOAuthService,
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, GoogleAuthController],
   exports: [AuthService],
 })
 export class AuthModule {}

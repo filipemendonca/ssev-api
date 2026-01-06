@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { SolicitationRepository } from "./solicitation.repository";
 import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
@@ -12,6 +12,8 @@ import { DocxService } from "../../common/services/docx-service";
 import { MailService } from "../../common/services/mail.service";
 import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
 import { SolicitationHistoryDto } from "../solicitationHistory/dto/solicitation.history.dto";
+import { UserDto } from "../user/dto/user.dto";
+import { GoogleDriveService } from "../../common/services/google-drive.service";
 
 @Injectable()
 export class SolicitationService {
@@ -24,7 +26,8 @@ export class SolicitationService {
     private readonly solicitationHistoryService: SolicitationHistoryService,
     private readonly userService: UserService,
     private readonly docxService: DocxService,
-    private readonly mailService: MailService
+    private readonly mailService: MailService,
+    private readonly googleDriveService: GoogleDriveService
   ) {}
 
   public async findAll(
@@ -134,10 +137,46 @@ export class SolicitationService {
     data: SolicitationDto,
     user?: CurrentUserType
   ): Promise<SolicitationDto> {
-    return await this.repo.transaction<SolicitationDto>(async (tx) => {
-      await this.sendEmailToDoctor(id);
-      return await this.update(id, data, user);
-    });
+    const solicitation = await this.repo.findById(id);
+    const variables = await this.variableService.findAllWithoutPagination();
+    const template = await this.examsResultTemplateService.findFirst();
+    const solicitationUserObj = await this.userService.findOne(
+      solicitation.userId
+    );
+
+    if (
+      solicitation === null ||
+      solicitationUserObj === null ||
+      template === null ||
+      variables === null
+    ) {
+      this.logger.warn(
+        "Não foi possível finalizar a solicitação: dados incompletos."
+      );
+      this.logger.debug(`Solicitação: ${JSON.stringify(solicitation)}`);
+      this.logger.debug(`Usuário: ${JSON.stringify(solicitationUserObj)}`);
+      this.logger.debug(`Template: ${JSON.stringify(template)}`);
+      this.logger.debug(`Variáveis: ${JSON.stringify(variables)}`);
+      throw new BadRequestException(
+        "Dados incompletos para finalizar a solicitação."
+      );
+    }
+
+    const updatedSolicitation = await this.update(id, data, user);
+
+    const buffer = await this.docxService.generateDocument(
+      variables,
+      template.fileData,
+      solicitation
+    );
+    await this.sendEmailToDoctor(buffer, solicitationUserObj, solicitation);
+    await this.googleDriveService.uploadDocx(
+      buffer,
+      `relatorio_solicitacao_${solicitation.id}.docx`,
+      process.env.GOOGLE_DRIVE_FOLDER_ID
+    );
+
+    return updatedSolicitation;
   }
 
   public async delete(id: string) {
@@ -211,41 +250,20 @@ export class SolicitationService {
     });
   }
 
-  public async sendEmailToDoctor(id: string): Promise<boolean> {
-    const solicitation = await this.repo.findById(id);
-    const variables = await this.variableService.findAllWithoutPagination();
-    const template = await this.examsResultTemplateService.findFirst();
-    const user = await this.userService.findOne(solicitation.userId);
-
-    if (
-      solicitation !== null &&
-      user !== null &&
-      template !== null &&
-      variables !== null
-    ) {
-      const buffer = await this.docxService.generateDocument(
-        variables,
-        template.fileData,
-        solicitation
-      );
-
-      await this.configureFinishSolicitationEmail(
-        user.email,
-        user.name,
-        solicitation.patient,
-        solicitation.tutor,
-        solicitation.createdAt,
-        buffer
-      );
-      return true;
-    } else {
-      this.logger.warn("Não foi possível enviar o e-mail: dados incompletos.");
-      this.logger.debug(`Solicitação: ${JSON.stringify(solicitation)}`);
-      this.logger.debug(`Usuário: ${JSON.stringify(user)}`);
-      this.logger.debug(`Template: ${JSON.stringify(template)}`);
-      this.logger.debug(`Variáveis: ${JSON.stringify(variables)}`);
-      return false;
-    }
+  public async sendEmailToDoctor(
+    // id: string,
+    documentBuffer: Buffer<ArrayBufferLike>,
+    user: UserDto,
+    solicitation: SolicitationDto
+  ): Promise<void> {
+    await this.configureFinishSolicitationEmail(
+      user.email,
+      user.name,
+      solicitation.patient,
+      solicitation.tutor,
+      solicitation.createdAt,
+      documentBuffer
+    );
   }
 
   public async generateDocumentBufferToDownload(

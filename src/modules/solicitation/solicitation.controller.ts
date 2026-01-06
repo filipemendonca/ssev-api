@@ -239,20 +239,20 @@ export class SolicitationController {
     return;
   }
 
-  @Post("document/send-report/:solicitationId")
-  async sendReport(@Param("solicitationId") solicitationId: string) {
-    try {
-      const emailSented = await this.service.sendEmailToDoctor(solicitationId);
-      if (!emailSented) {
-        throw new HttpException("Erro ao enviar o e-mail.", 500);
-      }
-      return new SuccessResponse<SolicitationDto>(
-        { emailSented } as any,
-        "E-mail enviado com sucesso."
-      );
-    } catch (error) {
-      console.error("Error sending report email:", error);
-      throw new HttpException("Erro ao enviar o e-mail.", error.status);
-    }
-  }
+  // @Post("document/send-report/:solicitationId")
+  // async sendReport(@Param("solicitationId") solicitationId: string) {
+  //   try {
+  //     const emailSented = await this.service.sendEmailToDoctor(solicitationId);
+  //     if (!emailSented) {
+  //       throw new HttpException("Erro ao enviar o e-mail.", 500);
+  //     }
+  //     return new SuccessResponse<SolicitationDto>(
+  //       { emailSented } as any,
+  //       "E-mail enviado com sucesso."
+  //     );
+  //   } catch (error) {
+  //     console.error("Error sending report email:", error);
+  //     throw new HttpException("Erro ao enviar o e-mail.", error.status);
+  //   }
+  // }
 }

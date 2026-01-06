@@ -13,6 +13,8 @@ import { ExamsResultTemplateService } from "../examsResultTemplate/exams.result.
 import { MailService } from "../../common/services/mail.service";
 import { UserService } from "../user/user.service";
 import { UserRepository } from "../user/user.repository";
+import { GoogleDriveService } from "../../common/services/google-drive.service";
+import { GoogleOAuthService } from "../../common/services/google-oauth.service";
 
 @Module({
   providers: [
@@ -29,6 +31,8 @@ import { UserRepository } from "../user/user.repository";
     MailService,
     UserService,
     PrismaService,
+    GoogleDriveService,
+    GoogleOAuthService,
   ],
   controllers: [SolicitationController],
 })
