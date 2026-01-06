@@ -14,6 +14,7 @@ import { SolicitationHistoryService } from "../solicitationHistory/solicitation.
 import { SolicitationHistoryDto } from "../solicitationHistory/dto/solicitation.history.dto";
 import { UserDto } from "../user/dto/user.dto";
 import { GoogleDriveService } from "../../common/services/google-drive.service";
+import { ExamsResultTemplateDto } from "../examsResultTemplate/dto/exams.result.template.dto";
 
 @Injectable()
 export class SolicitationService {
@@ -132,11 +133,12 @@ export class SolicitationService {
     });
   }
 
-  public async finishSolicitation(
-    id: string,
-    data: SolicitationDto,
-    user?: CurrentUserType
-  ): Promise<SolicitationDto> {
+  public async getAndConfigureDocumentFromSolicitation(id: string): Promise<{
+    solicitation: SolicitationDto;
+    variables: Record<string, string>;
+    template: ExamsResultTemplateDto;
+    solicitationUserObj: UserDto;
+  } | null> {
     const solicitation = await this.repo.findById(id);
     const variables = await this.variableService.findAllWithoutPagination();
     const template = await this.examsResultTemplateService.findFirst();
@@ -161,6 +163,17 @@ export class SolicitationService {
         "Dados incompletos para finalizar a solicitação."
       );
     }
+
+    return { solicitation, variables, template, solicitationUserObj };
+  }
+
+  public async finishSolicitation(
+    id: string,
+    data: SolicitationDto,
+    user?: CurrentUserType
+  ): Promise<SolicitationDto> {
+    const { solicitation, variables, solicitationUserObj, template } =
+      await this.getAndConfigureDocumentFromSolicitation(id);
 
     const updatedSolicitation = await this.update(id, data, user);
 
@@ -282,6 +295,18 @@ export class SolicitationService {
 
       return buffer;
     });
+  }
+
+  public async sendEmailManually(solicitationId: string): Promise<void> {
+    const { solicitation, variables, solicitationUserObj, template } =
+      await this.getAndConfigureDocumentFromSolicitation(solicitationId);
+
+    const buffer = await this.docxService.generateDocument(
+      variables,
+      template.fileData,
+      solicitation
+    );
+    await this.sendEmailToDoctor(buffer, solicitationUserObj, solicitation);
   }
 
   private async configureFinishSolicitationEmail(
