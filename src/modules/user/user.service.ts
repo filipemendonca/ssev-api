@@ -1,19 +1,20 @@
 import { Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { hash } from "bcrypt";
-import { UserRepository } from "./user.repository";
-import { UserDto } from "./dto/user.dto";
-import { SuccessResponse } from "../../common/dto/response.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
+import { SuccessResponse } from "../../common/dto/response.dto";
+import { UserDto, UserViewDto } from "./dto/user.dto";
+import { UserRepository } from "./user.repository";
 
 @Injectable()
 export class UserService {
   constructor(private readonly userRepo: UserRepository) {}
 
   public async findAll(
-    pagination: PaginationQueryDto
-  ): Promise<SuccessResponse<UserDto[]>> {
+    pagination: PaginationQueryDto,
+    select?: any
+  ): Promise<SuccessResponse<UserViewDto[]>> {
     const { items, total, hasNextPage, totalPages } =
-      await this.userRepo.findAll(pagination);
+      await this.userRepo.findAll(pagination, undefined, select);
 
     return new SuccessResponse(items, null, {
       total,
@@ -24,8 +25,8 @@ export class UserService {
     });
   }
 
-  public async findOne(id: string): Promise<UserDto | null> {
-    return await this.userRepo.findById(id);
+  public async findOne(id: string, select?: any): Promise<UserDto | null> {
+    return await this.userRepo.findById(id, select);
   }
 
   public async findBy(email?: string): Promise<UserDto> {

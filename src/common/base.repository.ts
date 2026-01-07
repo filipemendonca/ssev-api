@@ -26,7 +26,11 @@ export class BaseRepository<TDelegate extends DelegateMethods, TEntity> {
     this.model = modelAccessor(prisma);
   }
 
-  async findAll(pagination: PaginationQueryDto, filters?: WhereArg<TDelegate>) {
+  async findAll(
+    pagination: PaginationQueryDto,
+    filters?: WhereArg<TDelegate>,
+    select?: any
+  ) {
     const { limit, currentPage } = pagination;
 
     const skip = (currentPage - 1) * limit;
@@ -34,6 +38,7 @@ export class BaseRepository<TDelegate extends DelegateMethods, TEntity> {
     const [items, total] = await Promise.all([
       this.model.findMany({
         where: filters,
+        select,
         orderBy: [
           {
             createdAt: "desc",
@@ -56,10 +61,15 @@ export class BaseRepository<TDelegate extends DelegateMethods, TEntity> {
     return { items: items as TEntity[], total, totalPages, hasNextPage };
   }
 
-  async findAllWithoutPagination(filters?: WhereArg<TDelegate>, include?: any) {
+  async findAllWithoutPagination(
+    filters?: WhereArg<TDelegate>,
+    include?: any,
+    select?: any
+  ) {
     const items = await this.model.findMany({
       where: filters,
       include: include,
+      select: select,
     });
     return items as TEntity[];
   }
@@ -70,13 +80,14 @@ export class BaseRepository<TDelegate extends DelegateMethods, TEntity> {
 
   async findFirst(
     filters?: WhereArg<TDelegate>,
-    orderBy?: any[]
+    orderBy?: any[],
+    select?: any
   ): Promise<TEntity | null> {
-    return this.model.findFirst({ where: filters, orderBy: orderBy });
+    return this.model.findFirst({ where: filters, orderBy: orderBy, select });
   }
 
-  async findById(id: string): Promise<TEntity | null> {
-    return this.model.findUnique({ where: { id } });
+  async findById(id: string, select?: any): Promise<TEntity | null> {
+    return this.model.findUnique({ where: { id }, select });
   }
 
   async findMany(params: any): Promise<TEntity[] | null> {

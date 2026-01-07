@@ -1,20 +1,20 @@
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
-import { SolicitationRepository } from "./solicitation.repository";
-import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
+import { Role, SolicitationStatus } from "@prisma/client";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
-import { Role, SolicitationStatus } from "@prisma/client";
-import { CurrentUserType } from "../../common/utils/current-user.util";
-import { VariablesService } from "../variables/variables.service";
-import { ExamsResultTemplateService } from "../examsResultTemplate/exams.result.template.service";
-import { UserService } from "../user/user.service";
 import { DocxService } from "../../common/services/docx-service";
-import { MailService } from "../../common/services/mail.service";
-import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
-import { SolicitationHistoryDto } from "../solicitationHistory/dto/solicitation.history.dto";
-import { UserDto } from "../user/dto/user.dto";
 import { GoogleDriveService } from "../../common/services/google-drive.service";
+import { MailService } from "../../common/services/mail.service";
+import { CurrentUserType } from "../../common/utils/current-user.util";
 import { ExamsResultTemplateDto } from "../examsResultTemplate/dto/exams.result.template.dto";
+import { ExamsResultTemplateService } from "../examsResultTemplate/exams.result.template.service";
+import { SolicitationHistoryDto } from "../solicitationHistory/dto/solicitation.history.dto";
+import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
+import { UserService } from "../user/user.service";
+import { VariablesService } from "../variables/variables.service";
+import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
+import { SolicitationRepository } from "./solicitation.repository";
+import { UserViewDto } from "../user/dto/user.dto";
 
 @Injectable()
 export class SolicitationService {
@@ -137,7 +137,7 @@ export class SolicitationService {
     solicitation: SolicitationDto;
     variables: Record<string, string>;
     template: ExamsResultTemplateDto;
-    solicitationUserObj: UserDto;
+    solicitationUserObj: UserViewDto;
   } | null> {
     const solicitation = await this.repo.findById(id);
     const variables = await this.variableService.findAllWithoutPagination();
@@ -266,7 +266,7 @@ export class SolicitationService {
   public async sendEmailToDoctor(
     // id: string,
     documentBuffer: Buffer<ArrayBufferLike>,
-    user: UserDto,
+    user: UserViewDto,
     solicitation: SolicitationDto
   ): Promise<void> {
     await this.configureFinishSolicitationEmail(

@@ -61,4 +61,29 @@ export class MailService {
       });
     }
   }
+
+  async sendMail(options: {
+    to: string;
+    subject: string;
+    text?: string;
+    html?: string;
+  }) {
+    if (process.env.NODE_ENV === "production") {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      await resend.emails.send({
+        from: `"Sistema" <${process.env.RESEND_FROM_EMAIL}>`,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+      });
+    } else {
+      return this.transporter.sendMail({
+        from: `"Sistema" <${process.env.SMTP_USER}>`,
+        to: options.to,
+        subject: options.subject,
+        text: options.text,
+        html: options.html,
+      });
+    }
+  }
 }
