@@ -9,11 +9,13 @@ import { SolicitationHistoryModule } from "./modules/solicitationHistory/solicit
 import { ExamsResultTemplateModule } from "./modules/examsResultTemplate/exams.result.template.module";
 import { VariablesModule } from "./modules/variables/variables.module";
 import { PrismaService } from "../prisma/prisma.service";
+import { ProfileModule } from "./modules/profile/profile.module";
 
 @Module({
   imports: [
     AuthModule,
     UserModule,
+    ProfileModule,
     SampleModule,
     ExamsModule,
     InfectiousAgentsModule,
