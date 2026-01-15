@@ -10,6 +10,7 @@ import { AuthController } from "./auth.controller";
 import { PrismaService } from "../../../prisma/prisma.service";
 import { GoogleAuthController } from "../googleOAuth/google.auth.controller";
 import { GoogleOAuthService } from "../../common/services/google-oauth.service";
+import { MailService } from "../../common/services/mail.service";
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { GoogleOAuthService } from "../../common/services/google-oauth.service";
     UserService,
     UserRepository,
     PrismaService,
+    MailService,
     GoogleOAuthService,
   ],
   controllers: [AuthController, GoogleAuthController],

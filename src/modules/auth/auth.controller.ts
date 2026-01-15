@@ -6,15 +6,31 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  BadRequestException,
 } from "@nestjs/common";
 import { Response, Request } from "express";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { UserDto } from "../user/dto/user.dto";
+import {
+  generateResetToken,
+  resetPasswordEmailTemplate,
+  sha256,
+} from "../../common/utils/password-reset.util";
+import { addMinutes } from "date-fns";
+import { PrismaService } from "../../../prisma/prisma.service";
+import { MailService } from "../../common/services/mail.service";
+import { hash } from "bcrypt";
+import { SuccessResponse } from "../../common/dto/response.dto";
 
 @Controller("auth")
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly prismaService: PrismaService,
+    private readonly mailService: MailService
+  ) {}
+
   @Post("login")
   async login(
     @Body() dto: LoginDto,
@@ -95,5 +111,92 @@ export class AuthController {
       console.error(ex);
       return { valid: false };
     }
+  }
+
+  @Post("validate-reset-token")
+  async validate(@Body("token") token: string) {
+    const tokenHash = sha256(token);
+
+    const record = await this.prismaService.passwordResetToken.findFirst({
+      where: {
+        tokenHash,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!record) throw new BadRequestException("Token inválido");
+
+    return new SuccessResponse<{ valid: boolean }>({ valid: true }, "");
+  }
+
+  @Post("forgot-password")
+  async forgotPassword(@Body("email") email: string) {
+    const user = await this.prismaService.user.findUnique({ where: { email } });
+
+    // Sempre retorna ok (anti enumeração de email)``
+    if (!user)
+      return {
+        message:
+          "Se existir, enviaremos as informações de recuperação de senha para o e-mail cadastrado.",
+      };
+
+    const { token, tokenHash } = generateResetToken();
+
+    const link = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+
+    const html = resetPasswordEmailTemplate({
+      name: user.name,
+      resetLink: link,
+    });
+
+    await this.prismaService.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        tokenHash,
+        expiresAt: addMinutes(new Date(), 30),
+      },
+    });
+
+    await this.mailService.sendMail({
+      to: user.email,
+      subject: "Redefinição de senha",
+      html,
+    });
+
+    return {
+      message:
+        "Se existir, enviaremos as informações de recuperação de senha para o e-mail cadastrado.",
+    };
+  }
+
+  @Post("reset-password")
+  async reset(@Body() body: { token: string; password: string }) {
+    const tokenHash = sha256(body.token);
+
+    const record = await this.prismaService.passwordResetToken.findFirst({
+      where: {
+        tokenHash,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!record) throw new BadRequestException("Token inválido");
+
+    const passwordHash = await hash(body.password, 10);
+
+    await this.prismaService.$transaction([
+      this.prismaService.user.update({
+        where: { id: record.userId },
+        data: { password: passwordHash },
+      }),
+      this.prismaService.passwordResetToken.update({
+        where: { id: record.id },
+        data: { usedAt: new Date() },
+      }),
+    ]);
+
+    return { message: "Senha redefinida com sucesso" };
   }
 }

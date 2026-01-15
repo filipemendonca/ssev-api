@@ -63,6 +63,7 @@ model User {
   updatedAt DateTime @updatedAt  
   solicitations Solicitation[]
   solicitationHistories SolicitationHistory[]
+  passwordResetToken PasswordResetToken[]
 }
 
 model Sample {
@@ -152,4 +153,15 @@ model Variables {
   updatedAt DateTime @updatedAt    
 }
 
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
 
