@@ -1,31 +1,8 @@
-import { loadAsync } from "jszip";
-import { readFileSync } from "node:fs";
-
-export async function replaceVariablesInDocx(
-  templatePath: string,
-  variables: Record<string, string>,
-): Promise<Buffer> {
-  const content = readFileSync(templatePath);
-  const zip = await loadAsync(content);
-
-  // O documento principal do Word fica em /word/document.xml
-  const documentXml = await zip.file("word/document.xml").async("string");
-
-  // Faz substituição simples de texto
-  let newXml = documentXml;
-
-  for (const key in variables) {
-    const value = variables[key];
-    const regex = new RegExp(`${key}`, "g");
-    newXml = newXml.replace(regex, value);
-  }
-
-  // Atualiza o ZIP
-  zip.file("word/document.xml", newXml);
-
-  // Gera o buffer do novo docx
-  return await zip.generateAsync({ type: "nodebuffer" });
-}
+import { exec } from "node:child_process";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import tmp from "tmp";
+import { promisify } from "node:util";
 
 export function examReportEmailTemplate(params: {
   recipientName: string;

@@ -1,43 +1,20 @@
-import { Injectable } from "@nestjs/common";
-import PizZip from "pizzip";
+import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import Docxtemplater from "docxtemplater";
-import { replaceVariablesInDocx } from "../utils/docx-template";
+import PizZip from "pizzip";
 import { SolicitationDto } from "../../modules/solicitation/dto/solicitation.dto";
+import { exec } from "node:child_process";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import * as tmp from "tmp";
 
 @Injectable()
 export class DocxService {
-  // async generateDocument(
-  //   variables: Record<string, string>,
-  //   templateName: string,
-  //   solicitation: SolicitationDto
-  // ): Promise<Buffer> {
-  //   let recordSolicitationXVariables: Record<string, string> = {};
-  //   const variableIntoObject = Object.entries(variables);
-
-  //   variableIntoObject.forEach(([key, value]) => {
-  //     const val = solicitation[key as keyof SolicitationDto];
-  //     recordSolicitationXVariables[value] = Array.isArray(val)
-  //       ? val.join(", ")
-  //       : val instanceof Date
-  //         ? val.toISOString()
-  //         : String(val ?? "");
-  //   });
-
-  //   const buffer = await replaceVariablesInDocx(
-  //     `template/${templateName}`,
-  //     recordSolicitationXVariables
-  //   );
-
-  //   // // opcional: salvar em disco
-  //   // writeFileSync("./output/doc-gerado.docx", buffer);
-
-  //   return buffer;
-  // }
+  private readonly CONVERT_TIMEOUT = 30_000; // 30s
 
   async generateDocument(
     variables: Record<string, string>,
     templateBuffer: Buffer | Uint8Array,
-    solicitation: SolicitationDto
+    solicitation: SolicitationDto,
   ): Promise<Buffer> {
     const data: Record<string, string> = {};
 
@@ -85,6 +62,62 @@ export class DocxService {
     return doc.getZip().generate({
       type: "nodebuffer",
       compression: "DEFLATE",
+    });
+  }
+
+  async convertDocxToPdf(docxBuffer: Buffer): Promise<Buffer> {
+    const tmpDir = tmp.dirSync({ unsafeCleanup: true });
+
+    try {
+      const inputPath = path.join(tmpDir.name, "laudo.docx");
+      const outputPath = path.join(tmpDir.name, "laudo.pdf");
+
+      await fs.writeFile(inputPath, docxBuffer);
+
+      if (process.env.NODE_ENV === "production") {
+        await this.runWithTimeout(
+          `soffice --headless --nologo --nofirststartwizard --convert-to pdf --outdir ${tmpDir.name} ${inputPath}`,
+        );
+      } else {
+        const LIBRE = "/Applications/LibreOffice.app/Contents/MacOS/soffice";
+        await this.runWithTimeout(
+          `${LIBRE} --headless --nologo --nofirststartwizard --convert-to pdf --outdir ${tmpDir.name} ${inputPath}`,
+        );
+      }
+
+      return await fs.readFile(outputPath);
+    } catch (error) {
+      console.error("❌ Erro ao converter DOCX para PDF:", error);
+
+      throw new InternalServerErrorException("Falha ao gerar o PDF do laudo");
+    } finally {
+      tmpDir.removeCallback();
+    }
+  }
+
+  private async runWithTimeout(command: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const process = exec(
+        command,
+        { timeout: this.CONVERT_TIMEOUT },
+        (error) => {
+          if (error) {
+            if ((error as any).killed) {
+              return reject(new Error("Timeout ao converter documento"));
+            }
+            return reject(error);
+          }
+
+          resolve();
+        },
+      );
+
+      process.stdout?.on("data", (data) =>
+        console.log("📄 LibreOffice:", data.toString()),
+      );
+      process.stderr?.on("data", (data) =>
+        console.error("⚠️ LibreOffice:", data.toString()),
+      );
     });
   }
 }

@@ -6,16 +6,16 @@ import { DocxService } from "../../common/services/docx-service";
 import { GoogleDriveService } from "../../common/services/google-drive.service";
 import { MailService } from "../../common/services/mail.service";
 import { CurrentUserType } from "../../common/utils/current-user.util";
+import { examReportEmailTemplate } from "../../common/utils/docx-template";
 import { ExamsResultTemplateDto } from "../examsResultTemplate/dto/exams.result.template.dto";
 import { ExamsResultTemplateService } from "../examsResultTemplate/exams.result.template.service";
 import { SolicitationHistoryDto } from "../solicitationHistory/dto/solicitation.history.dto";
 import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
+import { UserViewDto } from "../user/dto/user.dto";
 import { UserService } from "../user/user.service";
 import { VariablesService } from "../variables/variables.service";
 import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
 import { SolicitationRepository } from "./solicitation.repository";
-import { UserViewDto } from "../user/dto/user.dto";
-import { examReportEmailTemplate } from "../../common/utils/docx-template";
 
 @Injectable()
 export class SolicitationService {
@@ -176,21 +176,25 @@ export class SolicitationService {
     const { solicitation, variables, solicitationUserObj, template } =
       await this.getAndConfigureDocumentFromSolicitation(id);
 
-    const updatedSolicitation = await this.update(id, data, user);
-
     const buffer = await this.docxService.generateDocument(
       variables,
       template.fileData,
       solicitation,
     );
-    await this.sendEmailToDoctor(buffer, solicitationUserObj, solicitation);
+
+    const pdfBuffer = await this.docxService.convertDocxToPdf(buffer);
+
+    await this.sendEmailToDoctor(pdfBuffer, solicitationUserObj, solicitation);
+
     await this.googleDriveService.uploadDocx(
-      buffer,
-      `relatorio_solicitacao_${solicitation.id}.docx`,
+      pdfBuffer,
+      `relatorio_solicitacao_${solicitation.id}.pdf`,
       process.env.GOOGLE_DRIVE_FOLDER_ID,
     );
 
-    return updatedSolicitation;
+    return await this.repo.transaction<SolicitationDto>(async (tx) => {
+      return await this.update(id, data, user);
+    });
   }
 
   public async delete(id: string) {
@@ -317,6 +321,7 @@ export class SolicitationService {
     tutor: string,
     createdAt: Date,
     buffer: Buffer<ArrayBufferLike>,
+    isPDFFile: boolean = true,
   ) {
     await this.mailService.sendMailWithAttachment({
       to: email,
@@ -329,10 +334,11 @@ export class SolicitationService {
         systemName: "SSEV - Sistema de Solicitação de Exames Veterinários",
       }),
       attachment: {
-        filename: "relatorio.docx",
+        filename: isPDFFile ? "relatorio.pdf" : "relatorio.docx",
         content: buffer,
-        contentType:
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        contentType: isPDFFile
+          ? "application/pdf"
+          : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       },
     });
   }

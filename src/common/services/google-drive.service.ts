@@ -9,7 +9,7 @@ export class GoogleDriveService {
 
   constructor(private readonly googleOAuth: GoogleOAuthService) {
     const authClient = this.googleOAuth.getClient(
-      process.env.GOOGLE_REFRESH_TOKEN
+      process.env.GOOGLE_REFRESH_TOKEN,
     );
 
     this.drive = google.drive({
@@ -18,7 +18,12 @@ export class GoogleDriveService {
     });
   }
 
-  async uploadDocx(buffer: Buffer, fileName: string, folderId?: string) {
+  async uploadDocx(
+    buffer: Buffer,
+    fileName: string,
+    folderId?: string,
+    isPdfFile: boolean = true,
+  ) {
     const stream = new Readable();
     stream.push(buffer);
     stream.push(null);
@@ -27,12 +32,14 @@ export class GoogleDriveService {
       requestBody: {
         name: fileName,
         parents: folderId ? [folderId] : undefined,
-        mimeType:
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        mimeType: isPdfFile
+          ? "application/pdf"
+          : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       },
       media: {
-        mimeType:
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        mimeType: isPdfFile
+          ? "application/pdf"
+          : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         body: stream,
       },
       fields: "id, webViewLink",
