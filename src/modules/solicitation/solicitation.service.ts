@@ -15,6 +15,7 @@ import { VariablesService } from "../variables/variables.service";
 import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
 import { SolicitationRepository } from "./solicitation.repository";
 import { UserViewDto } from "../user/dto/user.dto";
+import { examReportEmailTemplate } from "../../common/utils/docx-template";
 
 @Injectable()
 export class SolicitationService {
@@ -28,13 +29,13 @@ export class SolicitationService {
     private readonly userService: UserService,
     private readonly docxService: DocxService,
     private readonly mailService: MailService,
-    private readonly googleDriveService: GoogleDriveService
+    private readonly googleDriveService: GoogleDriveService,
   ) {}
 
   public async findAll(
     pagination: PaginationQueryDto,
     user?: CurrentUserType,
-    filter?: SolicitationFilterDto
+    filter?: SolicitationFilterDto,
   ): Promise<SuccessResponse<SolicitationDto[]>> {
     const where: any = {};
 
@@ -65,7 +66,7 @@ export class SolicitationService {
 
     const { items, total, hasNextPage, totalPages } = await this.repo.findAll(
       pagination,
-      where
+      where,
     );
 
     return new SuccessResponse(items, null, {
@@ -83,7 +84,7 @@ export class SolicitationService {
 
   public async create(
     data: SolicitationDto,
-    user: CurrentUserType
+    user: CurrentUserType,
   ): Promise<SolicitationDto> {
     return await this.repo.transaction<SolicitationDto>(async (tx) => {
       const solicitation = await this.repo.create(data);
@@ -106,7 +107,7 @@ export class SolicitationService {
     id: string,
     data: SolicitationDto,
     user?: CurrentUserType,
-    isExecuteHistoryCheck = true
+    isExecuteHistoryCheck = true,
   ): Promise<SolicitationDto> {
     return await this.repo.transaction<SolicitationDto>(async (tx) => {
       const updatedSolicitation = await this.repo.update(id, data);
@@ -143,7 +144,7 @@ export class SolicitationService {
     const variables = await this.variableService.findAllWithoutPagination();
     const template = await this.examsResultTemplateService.findFirst();
     const solicitationUserObj = await this.userService.findOne(
-      solicitation.userId
+      solicitation.userId,
     );
 
     if (
@@ -153,14 +154,14 @@ export class SolicitationService {
       variables === null
     ) {
       this.logger.warn(
-        "Não foi possível finalizar a solicitação: dados incompletos."
+        "Não foi possível finalizar a solicitação: dados incompletos.",
       );
       this.logger.debug(`Solicitação: ${JSON.stringify(solicitation)}`);
       this.logger.debug(`Usuário: ${JSON.stringify(solicitationUserObj)}`);
       this.logger.debug(`Template: ${JSON.stringify(template)}`);
       this.logger.debug(`Variáveis: ${JSON.stringify(variables)}`);
       throw new BadRequestException(
-        "Dados incompletos para finalizar a solicitação."
+        "Dados incompletos para finalizar a solicitação.",
       );
     }
 
@@ -170,7 +171,7 @@ export class SolicitationService {
   public async finishSolicitation(
     id: string,
     data: SolicitationDto,
-    user?: CurrentUserType
+    user?: CurrentUserType,
   ): Promise<SolicitationDto> {
     const { solicitation, variables, solicitationUserObj, template } =
       await this.getAndConfigureDocumentFromSolicitation(id);
@@ -180,13 +181,13 @@ export class SolicitationService {
     const buffer = await this.docxService.generateDocument(
       variables,
       template.fileData,
-      solicitation
+      solicitation,
     );
     await this.sendEmailToDoctor(buffer, solicitationUserObj, solicitation);
     await this.googleDriveService.uploadDocx(
       buffer,
       `relatorio_solicitacao_${solicitation.id}.docx`,
-      process.env.GOOGLE_DRIVE_FOLDER_ID
+      process.env.GOOGLE_DRIVE_FOLDER_ID,
     );
 
     return updatedSolicitation;
@@ -201,7 +202,7 @@ export class SolicitationService {
     cause: Pick<SolicitationDto, "blockedCause">,
     user: CurrentUserType,
     existingData: SolicitationDto,
-    lastHistory: SolicitationHistoryDto
+    lastHistory: SolicitationHistoryDto,
   ): Promise<SolicitationDto> {
     return await this.repo.transaction<SolicitationDto>(async (tx) => {
       if (existingData.status !== SolicitationStatus.BLOQUEADO) {
@@ -242,7 +243,7 @@ export class SolicitationService {
     id: string,
     cause: Pick<SolicitationDto, "canceledCause">,
     user: CurrentUserType,
-    existingData: SolicitationDto
+    existingData: SolicitationDto,
   ): Promise<SolicitationDto> {
     return await this.repo.transaction<SolicitationDto>(async (tx) => {
       await this.solicitationHistoryService.create({
@@ -267,7 +268,7 @@ export class SolicitationService {
     // id: string,
     documentBuffer: Buffer<ArrayBufferLike>,
     user: UserViewDto,
-    solicitation: SolicitationDto
+    solicitation: SolicitationDto,
   ): Promise<void> {
     await this.configureFinishSolicitationEmail(
       user.email,
@@ -275,13 +276,13 @@ export class SolicitationService {
       solicitation.patient,
       solicitation.tutor,
       solicitation.createdAt,
-      documentBuffer
+      documentBuffer,
     );
   }
 
   public async generateDocumentBufferToDownload(
     solicitationId: string,
-    templateBuffer: Buffer | Uint8Array
+    templateBuffer: Buffer | Uint8Array,
   ) {
     return await this.repo.transaction<Buffer>(async (tx) => {
       const variables = await this.variableService.findAllWithoutPagination();
@@ -290,7 +291,7 @@ export class SolicitationService {
       const buffer = await this.docxService.generateDocument(
         variables,
         templateBuffer,
-        solicitation
+        solicitation,
       );
 
       return buffer;
@@ -304,7 +305,7 @@ export class SolicitationService {
     const buffer = await this.docxService.generateDocument(
       variables,
       template.fileData,
-      solicitation
+      solicitation,
     );
     await this.sendEmailToDoctor(buffer, solicitationUserObj, solicitation);
   }
@@ -315,18 +316,18 @@ export class SolicitationService {
     patient: string,
     tutor: string,
     createdAt: Date,
-    buffer: Buffer<ArrayBufferLike>
+    buffer: Buffer<ArrayBufferLike>,
   ) {
     await this.mailService.sendMailWithAttachment({
       to: email,
       subject: "Relatório Gerado (Laudo)",
-      html: `<p>Olá, <strong>${name.toUpperCase()}</strong>!</p>
-      <p>Segue em anexo o resultado do laudo.</p>      
-      <p>Estamos enviando em anexo o relatório referente à solicitação de exame realizada para os seguintes dados:</p>
-      <p>Paciente: <strong>${patient}</strong></p>
-      <p>Tutor: <strong>${tutor}</strong></p>
-      <p>Data da Solicitação: <strong>${createdAt.toLocaleDateString()}</strong></p>                  
-      <p>Atenciosamente,</p>`,
+      html: examReportEmailTemplate({
+        recipientName: name,
+        patientName: patient,
+        tutorName: tutor,
+        requestDate: createdAt.toLocaleDateString("pt-BR"),
+        systemName: "SSEV - Sistema de Solicitação de Exames Veterinários",
+      }),
       attachment: {
         filename: "relatorio.docx",
         content: buffer,
