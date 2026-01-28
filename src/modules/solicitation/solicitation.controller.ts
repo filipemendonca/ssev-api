@@ -24,6 +24,7 @@ import { SolicitationHistoryService } from "../solicitationHistory/solicitation.
 import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
 import { SolicitationService } from "./solicitation.service";
 import { validateEditSolicitation } from "./util/solicitation-configure-edit";
+import { SolicitationStatus } from "@prisma/client";
 
 @UseGuards(JwtAuthGuard)
 @Controller("solicitation")
@@ -31,13 +32,13 @@ export class SolicitationController {
   constructor(
     private readonly service: SolicitationService,
     private readonly solicitationHistoryService: SolicitationHistoryService,
-    private readonly examsResultTemplateService: ExamsResultTemplateService
+    private readonly examsResultTemplateService: ExamsResultTemplateService,
   ) {}
 
   @Get()
   async findAll(
     @Query() query: PaginationQueryDto,
-    @CurrentUser() user: CurrentUserType
+    @CurrentUser() user: CurrentUserType,
   ): Promise<SuccessResponse<SolicitationDto[]>> {
     const response = await this.service.findAll(query, user);
 
@@ -52,7 +53,7 @@ export class SolicitationController {
   async findOne(
     @Param("id") id: string,
     @CurrentUser() user: CurrentUserType,
-    @Query() mode: { isViewMode: string }
+    @Query() mode: { isViewMode: string },
   ): Promise<SuccessResponse<SolicitationDto>> {
     const solicitation = await this.service.findOne(id);
 
@@ -76,7 +77,7 @@ export class SolicitationController {
   @Post("/search")
   async search(
     @Query() query: PaginationQueryDto,
-    @Body() filter: SolicitationFilterDto
+    @Body() filter: SolicitationFilterDto,
   ): Promise<SuccessResponse<SolicitationDto[]>> {
     const solicitations = await this.service.findAll(query, null, filter);
 
@@ -90,7 +91,7 @@ export class SolicitationController {
   @Post()
   async create(
     @Body() data: SolicitationDto,
-    @CurrentUser() user: CurrentUserType
+    @CurrentUser() user: CurrentUserType,
   ): Promise<SuccessResponse<SolicitationDto>> {
     try {
       const newSolicitation = await this.service.create(data, user);
@@ -101,7 +102,7 @@ export class SolicitationController {
 
       return new SuccessResponse<SolicitationDto>(
         newSolicitation,
-        "Solicitação criada com sucesso."
+        "Solicitação criada com sucesso.",
       );
     } catch (error) {
       console.error("Error creating solicitation:", error);
@@ -113,12 +114,12 @@ export class SolicitationController {
   async update(
     @Param("id") id: string,
     @Body() data: SolicitationDto,
-    @CurrentUser() user: CurrentUserType
+    @CurrentUser() user: CurrentUserType,
   ): Promise<SuccessResponse<SolicitationDto>> {
     try {
       return new SuccessResponse<SolicitationDto>(
         await this.service.update(id, data, user),
-        "Solicitação atualizada com sucesso."
+        "Solicitação atualizada com sucesso.",
       );
     } catch (error) {
       console.error("Error updating solicitation:", error);
@@ -130,12 +131,15 @@ export class SolicitationController {
   async finishSolicitation(
     @Param("id") id: string,
     @Body() data: SolicitationDto,
-    @CurrentUser() user: CurrentUserType
+    @CurrentUser() user: CurrentUserType,
   ): Promise<SuccessResponse<SolicitationDto>> {
     try {
+      data.status = SolicitationStatus.FINALIZADO;
+      data.finishedAt = new Date();
+
       return new SuccessResponse<SolicitationDto>(
         await this.service.finishSolicitation(id, data, user),
-        "Solicitação finalizada com sucesso."
+        "Solicitação finalizada com sucesso.",
       );
     } catch (error) {
       console.error("Error to try finish solicitation:", error);
@@ -147,13 +151,13 @@ export class SolicitationController {
   async blockUnblockSolicitation(
     @Param("id") id: string,
     @Body() cause: Pick<SolicitationDto, "blockedCause">,
-    @CurrentUser() user: CurrentUserType
+    @CurrentUser() user: CurrentUserType,
   ): Promise<SuccessResponse<SolicitationDto>> {
     let existingData = await this.service.findOne(id);
 
     const lastHistory =
       await this.solicitationHistoryService.findLastSolicitationHistoryToUnblockSolicitation(
-        id
+        id,
       );
 
     if (!existingData && !lastHistory) {
@@ -166,9 +170,9 @@ export class SolicitationController {
         cause,
         user,
         existingData,
-        lastHistory
+        lastHistory,
       ),
-      "Solicitação bloqueada com sucesso."
+      "Solicitação bloqueada com sucesso.",
     );
   }
 
@@ -176,7 +180,7 @@ export class SolicitationController {
   async cancelSolicitation(
     @Param("id") id: string,
     @Body() cause: Pick<SolicitationDto, "canceledCause">,
-    @CurrentUser() user: CurrentUserType
+    @CurrentUser() user: CurrentUserType,
   ): Promise<SuccessResponse<SolicitationDto>> {
     let existingData = await this.service.findOne(id);
 
@@ -186,13 +190,13 @@ export class SolicitationController {
 
     return new SuccessResponse<SolicitationDto>(
       await this.service.cancelSolititation(id, cause, user, existingData),
-      "Solicitação cancelada com sucesso."
+      "Solicitação cancelada com sucesso.",
     );
   }
 
   @Delete(":id")
   async delete(
-    @Param("id") id: string
+    @Param("id") id: string,
   ): Promise<SuccessResponse<SolicitationDto>> {
     const existingData = await this.service.findOne(id);
 
@@ -203,35 +207,35 @@ export class SolicitationController {
     existingData.isDeleted = true;
 
     return new SuccessResponse<SolicitationDto>(
-      await this.service.update(id, existingData, null, true)
+      await this.service.update(id, existingData, null, true),
     );
   }
 
   @Get("document/download/:solicitationId")
   async generate(
     @Res() res: Response,
-    @Param("solicitationId") solicitationId: string
+    @Param("solicitationId") solicitationId: string,
   ) {
     const template = await this.examsResultTemplateService.findFirst();
 
     if (template === null) {
       throw new NotFoundException(
-        `Template de resultado de exames não encontrado.`
+        `Template de resultado de exames não encontrado.`,
       );
     }
 
     const buffer = await this.service.generateDocumentBufferToDownload(
       solicitationId,
-      template.fileData
+      template.fileData,
     );
 
     res.setHeader(
       "Content-Type",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     );
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${template.fileName}"`
+      `attachment; filename="${template.fileName}"`,
     );
     res.setHeader("Content-Length", buffer.length);
 
@@ -248,7 +252,7 @@ export class SolicitationController {
       }
       return new SuccessResponse<SolicitationDto>(
         { emailSented } as any,
-        "E-mail enviado com sucesso."
+        "E-mail enviado com sucesso.",
       );
     } catch (error) {
       console.error("Error sending report email:", error);

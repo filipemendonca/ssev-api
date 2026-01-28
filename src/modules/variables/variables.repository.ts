@@ -27,10 +27,10 @@ export class VariablesRepository extends BaseRepository<
 
   async listColumnsFromTable(tabela: string): Promise<ColumnResponse> {
     const excludedColumns = `'id',
+    'isdeleted',
     'createdat',
     'updatedat',
     'canceledat',
-    'finishedat',
     'blockedat',
     'blockedcause',
     'canceledcause',

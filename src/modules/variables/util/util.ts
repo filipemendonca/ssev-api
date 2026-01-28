@@ -7,10 +7,10 @@ const translations: Record<string, string> = {
   doctor: "Veterinário",
   hospitalVet: "Hospital Veterinário",
   age: "Idade",
-  createdAt: "Criado em",
-  updatedAt: "Atualizado em",
-  finishedAt: "Finalizado em",
-  canceledAt: "Cancelado em",
+  createdAt: "Data de criação da solicitação",
+  updatedAt: "Data de atualização da solicitação",
+  finishedAt: "Data de finalização da solicitação",
+  canceledAt: "Data de cancelamento da solicitação",
   status: "Status",
   specie: "Espécie",
   samples: "Amostras",
@@ -35,7 +35,7 @@ function beautifyName(column: string): string {
 }
 
 export async function mapColumns(
-  response: ColumnResponse
+  response: ColumnResponse,
 ): Promise<Record<string, string>> {
   if (!response.length) {
     return {};

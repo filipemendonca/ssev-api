@@ -45,7 +45,7 @@ export class DocxService {
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
-      delimiters: { start: "##", end: "##" },
+      delimiters: { start: "#", end: "#" },
       nullGetter(part) {
         console.warn(`Variável não encontrada: ${part.value}`);
         return "";

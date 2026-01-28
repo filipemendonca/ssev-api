@@ -45,6 +45,7 @@ async function main() {
   await prisma.sample.createMany({
     data: [
       { name: "Sangue" },
+      { name: "Sangue completo" },
       { name: "Urina" },
       { name: "Raspado de Pele" },
       { name: "Swab" },
