@@ -22,7 +22,7 @@ const translations: Record<string, string> = {
   solicitationColectTypeConclusion: "Tipo de Coleta da Solicitação (Conslusão)",
   solicitationConclusionText: "Texto de Conclusão da Solicitação",
   solicitationResult: "Resultado da Solicitação",
-  solicitationSampleConclusion: "Conclusão da Amostra da Solicitação",
+  solicitationSampleConclusion: "Material usado na coleta",
   solicitationSampleQuality: "Qualidade da Amostra da Solicitação",
 };
 
