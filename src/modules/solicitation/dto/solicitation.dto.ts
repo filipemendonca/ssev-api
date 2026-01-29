@@ -1,4 +1,5 @@
 import {
+  ExamResultType,
   SolicitationResult,
   SolicitationSampleQuality,
   SolicitationStatus,
@@ -24,6 +25,7 @@ export class SolicitationDto {
   bloodCollectionTubeColor: string[];
   infectiousAgents: string[];
   samples: string[];
+  examResultType: ExamResultType;
   exams: string[];
   canceledCause: string;
   blockedCause: string;

@@ -16,6 +16,15 @@ import { UserService } from "../user/user.service";
 import { VariablesService } from "../variables/variables.service";
 import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
 import { SolicitationRepository } from "./solicitation.repository";
+import { ExamsService } from "../exams/exams.service";
+import { InfectiousAgentsService } from "../infectious-agents/infectious-agents.service";
+import { formatHumanList, joinNonEmpty } from "../variables/util/util";
+import { SampleService } from "../sample/sample.service";
+
+const examResultTypeTranslations: Record<string, string> = {
+  PCR_QUALITATIVO: "PCR qualitativo",
+  PCR_QUANTITATIVO: "PCR quantitativo",
+};
 
 @Injectable()
 export class SolicitationService {
@@ -29,6 +38,9 @@ export class SolicitationService {
     private readonly userService: UserService,
     private readonly docxService: DocxService,
     private readonly mailService: MailService,
+    private readonly examsService: ExamsService,
+    private readonly infectiousAgentsService: InfectiousAgentsService,
+    private readonly sampleService: SampleService,
     private readonly googleDriveService: GoogleDriveService,
   ) {}
 
@@ -292,8 +304,13 @@ export class SolicitationService {
       const variables = await this.variableService.findAllWithoutPagination();
       const solicitation = await this.repo.findById(solicitationId);
 
-      const buffer = await this.docxService.generateDocument(
+      const variablesMapped = await this.mapSolicitationVariables(
+        solicitation,
         variables,
+      );
+
+      const buffer = await this.docxService.generateDocument(
+        variablesMapped,
         templateBuffer,
         solicitation,
       );
@@ -346,5 +363,62 @@ export class SolicitationService {
           : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       },
     });
+  }
+
+  private async mapSolicitationVariables(
+    solicitation: SolicitationDto,
+    variables: Record<string, string>,
+  ): Promise<Record<string, string>> {
+    const data: Record<string, string> = {};
+
+    const [exams, infectiousAgents, samples] = await Promise.all([
+      solicitation.exams && solicitation.exams.length > 0
+        ? this.examsService.findAllWithoutPagination(solicitation.exams)
+        : Promise.resolve([]),
+
+      solicitation.infectiousAgents && solicitation.infectiousAgents.length > 0
+        ? this.infectiousAgentsService.findAllWithoutPagination(
+            solicitation.infectiousAgents,
+          )
+        : Promise.resolve([]),
+
+      solicitation.samples && solicitation.samples.length > 0
+        ? this.sampleService.findAllWithoutPagination(solicitation.samples)
+        : Promise.resolve([]),
+    ]);
+
+    const examsText = [
+      ...exams.map((e) => e.name.toLowerCase()),
+      ...infectiousAgents.map((ia) => ia.name),
+    ];
+
+    const examsTextFormatted = formatHumanList(examsText);
+    const combinedExams = joinNonEmpty(examsTextFormatted);
+
+    solicitation.exams = [
+      `${examResultTypeTranslations[solicitation.examResultType]}${combinedExams === "" ? "" : " para " + combinedExams}`,
+    ];
+
+    // const sampleText = formatHumanList(samples.map((s) => s.name));
+    // const combinedSamples = joinNonEmpty(sampleText.toLowerCase());
+
+    // solicitation.samples = [combinedSamples];
+
+    for (const [key, variableName] of Object.entries(variables)) {
+      const val = solicitation[key as keyof SolicitationDto];
+
+      let formattedValue: string;
+      if (Array.isArray(val)) {
+        formattedValue = val.join(", ");
+      } else if (val instanceof Date) {
+        formattedValue = val.toLocaleDateString("pt-BR");
+      } else {
+        formattedValue = String(val ?? "");
+      }
+
+      data[variableName] = formattedValue;
+    }
+
+    return data;
   }
 }

@@ -10,7 +10,7 @@ export class ExamsService {
 
   public async findAll(
     pagination: PaginationQueryDto,
-    filter?: ExamsFilterDto
+    filter?: ExamsFilterDto,
   ): Promise<SuccessResponse<ExamsDto[]>> {
     const where: any = {};
 
@@ -20,7 +20,7 @@ export class ExamsService {
 
     const { items, total, hasNextPage, totalPages } = await this.repo.findAll(
       pagination,
-      where
+      where,
     );
 
     return new SuccessResponse(items, null, {
@@ -32,6 +32,16 @@ export class ExamsService {
     });
   }
 
+  public async findAllWithoutPagination(ids?: string[]): Promise<ExamsDto[]> {
+    const where: any = {};
+
+    if (ids && ids.length > 0) {
+      where.id = { in: ids };
+    }
+
+    return await this.repo.findAllWithoutPagination(where);
+  }
+
   public async findOne(id: string): Promise<ExamsDto | null> {
     return await this.repo.findById(id);
   }
@@ -41,7 +51,7 @@ export class ExamsService {
 
     if (validateInputData !== 0) {
       throw new UnprocessableEntityException(
-        "Já existe um registro com o mesmo nome."
+        "Já existe um registro com o mesmo nome.",
       );
     }
 

@@ -11,22 +11,48 @@ import * as tmp from "tmp";
 export class DocxService {
   private readonly CONVERT_TIMEOUT = 30_000; // 30s
 
-  async generateDocument(
-    variables: Record<string, string>,
-    templateBuffer: Buffer | Uint8Array,
+  async mapSolicitationVariables(
     solicitation: SolicitationDto,
-  ): Promise<Buffer> {
+    variables: Record<string, string>,
+  ): Promise<Record<string, string>> {
     const data: Record<string, string> = {};
 
     for (const [key, variableName] of Object.entries(variables)) {
       const val = solicitation[key as keyof SolicitationDto];
 
-      data[variableName] = Array.isArray(val)
-        ? val.join(", ")
-        : val instanceof Date
-          ? val.toLocaleDateString("pt-BR")
-          : String(val ?? "");
+      let formattedValue: string;
+      if (Array.isArray(val)) {
+        formattedValue = val.join(", ");
+      } else if (val instanceof Date) {
+        formattedValue = val.toLocaleDateString("pt-BR");
+      } else {
+        formattedValue = String(val ?? "");
+      }
+
+      data[variableName] = formattedValue;
     }
+
+    return data;
+  }
+
+  async generateDocument(
+    data: Record<string, string>,
+    templateBuffer: Buffer | Uint8Array,
+    solicitation: SolicitationDto,
+  ): Promise<Buffer> {
+    // const data: Record<string, string> = {};
+
+    // for (const [key, variableName] of Object.entries(variables)) {
+    //   const val = solicitation[key as keyof SolicitationDto];
+
+    //   data[variableName] = Array.isArray(val)
+    //     ? val.join(", ")
+    //     : val instanceof Date
+    //       ? val.toLocaleDateString("pt-BR")
+    //       : String(val ?? "");
+    // }
+
+    // const data = await this.mapSolicitationVariables(solicitation, variables);
 
     let zip: PizZip;
 

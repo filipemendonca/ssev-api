@@ -15,6 +15,12 @@ import { UserService } from "../user/user.service";
 import { UserRepository } from "../user/user.repository";
 import { GoogleDriveService } from "../../common/services/google-drive.service";
 import { GoogleOAuthService } from "../../common/services/google-oauth.service";
+import { ExamsRepository } from "../exams/exams.repository";
+import { ExamsService } from "../exams/exams.service";
+import { InfectiousAgentsRepository } from "../infectious-agents/infectious-agents.repository";
+import { InfectiousAgentsService } from "../infectious-agents/infectious-agents.service";
+import { SampleRepository } from "../sample/sample.repository";
+import { SampleService } from "../sample/sample.service";
 
 @Module({
   providers: [
@@ -27,6 +33,12 @@ import { GoogleOAuthService } from "../../common/services/google-oauth.service";
     ExamsResultTemplateService,
     ExamsResultTemplateRepository,
     UserRepository,
+    ExamsRepository,
+    ExamsService,
+    InfectiousAgentsRepository,
+    InfectiousAgentsService,
+    SampleRepository,
+    SampleService,
     DocxService,
     MailService,
     UserService,

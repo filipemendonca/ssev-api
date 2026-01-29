@@ -13,7 +13,7 @@ export class InfectiousAgentsService {
 
   public async findAll(
     pagination: PaginationQueryDto,
-    filter?: InfectiousAgentsFilterDto
+    filter?: InfectiousAgentsFilterDto,
   ): Promise<SuccessResponse<InfectiousAgentsDto[]>> {
     const where: any = {};
 
@@ -23,7 +23,7 @@ export class InfectiousAgentsService {
 
     const { items, total, hasNextPage, totalPages } = await this.repo.findAll(
       pagination,
-      where
+      where,
     );
 
     return new SuccessResponse(items, null, {
@@ -35,6 +35,18 @@ export class InfectiousAgentsService {
     });
   }
 
+  public async findAllWithoutPagination(
+    ids?: string[],
+  ): Promise<InfectiousAgentsDto[]> {
+    const where: any = {};
+
+    if (ids && ids.length > 0) {
+      where.id = { in: ids };
+    }
+
+    return await this.repo.findAllWithoutPagination(where);
+  }
+
   public async findOne(id: string) {
     return await this.repo.findById(id);
   }
@@ -44,7 +56,7 @@ export class InfectiousAgentsService {
 
     if (validateInputData !== 0) {
       throw new UnprocessableEntityException(
-        "Já existe um registro com o mesmo nome."
+        "Já existe um registro com o mesmo nome.",
       );
     }
     return await this.repo.create(data);
