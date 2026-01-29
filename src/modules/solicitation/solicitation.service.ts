@@ -298,7 +298,9 @@ export class SolicitationService {
         solicitation,
       );
 
-      return buffer;
+      const pdfBuffer = await this.docxService.convertDocxToPdf(buffer);
+
+      return pdfBuffer;
     });
   }
 
@@ -311,7 +313,10 @@ export class SolicitationService {
       template.fileData,
       solicitation,
     );
-    await this.sendEmailToDoctor(buffer, solicitationUserObj, solicitation);
+
+    const pdfBuffer = await this.docxService.convertDocxToPdf(buffer);
+
+    await this.sendEmailToDoctor(pdfBuffer, solicitationUserObj, solicitation);
   }
 
   private async configureFinishSolicitationEmail(
