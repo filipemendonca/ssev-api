@@ -1,5 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { PaginationQueryDto } from "./dto/pagination-query.dto";
+import { BadRequestException } from "@nestjs/common";
 
 type WhereArg<TDelegate extends DelegateMethods> =
   NonNullable<Parameters<TDelegate["findMany"]>[0]> extends { where?: infer W }
@@ -21,7 +22,7 @@ export class BaseRepository<TDelegate extends DelegateMethods, TEntity> {
 
   constructor(
     protected readonly prisma: PrismaClient,
-    modelAccessor: (prisma: PrismaClient) => TDelegate
+    modelAccessor: (prisma: PrismaClient) => TDelegate,
   ) {
     this.model = modelAccessor(prisma);
   }
@@ -29,7 +30,7 @@ export class BaseRepository<TDelegate extends DelegateMethods, TEntity> {
   async findAll(
     pagination: PaginationQueryDto,
     filters?: WhereArg<TDelegate>,
-    select?: any
+    select?: any,
   ) {
     const { limit, currentPage } = pagination;
 
@@ -64,7 +65,7 @@ export class BaseRepository<TDelegate extends DelegateMethods, TEntity> {
   async findAllWithoutPagination(
     filters?: WhereArg<TDelegate>,
     include?: any,
-    select?: any
+    select?: any,
   ) {
     const items = await this.model.findMany({
       where: filters,
@@ -81,7 +82,7 @@ export class BaseRepository<TDelegate extends DelegateMethods, TEntity> {
   async findFirst(
     filters?: WhereArg<TDelegate>,
     orderBy?: any[],
-    select?: any
+    select?: any,
   ): Promise<TEntity | null> {
     return this.model.findFirst({ where: filters, orderBy: orderBy, select });
   }
@@ -103,6 +104,14 @@ export class BaseRepository<TDelegate extends DelegateMethods, TEntity> {
       return this.model.update({ where: { id }, data });
     } catch (error) {
       console.log(error);
+      if (error instanceof Prisma.PrismaClientValidationError) {
+        throw new BadRequestException({
+          message: "Dados inválidos para atualização",
+          details: error.message,
+        });
+      }
+
+      throw error;
     }
   }
 

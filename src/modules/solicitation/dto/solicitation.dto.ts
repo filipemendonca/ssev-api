@@ -4,6 +4,7 @@ import {
   SolicitationSampleQuality,
   SolicitationStatus,
 } from "@prisma/client";
+import { IsEnum } from "class-validator";
 
 interface DateRange {
   range: {
@@ -25,6 +26,10 @@ export class SolicitationDto {
   bloodCollectionTubeColor: string[];
   infectiousAgents: string[];
   samples: string[];
+
+  @IsEnum(ExamResultType, {
+    message: "Qualidade da amostra inválida.",
+  })
   examResultType: ExamResultType;
   exams: string[];
   canceledCause: string;
@@ -35,11 +40,20 @@ export class SolicitationDto {
   createdAt: Date;
   updatedAt: Date;
   blockedAt: Date;
+
+  @IsEnum(SolicitationResult, {
+    message: "Resultado da solicitação inválida.",
+  })
   solicitationResult?: SolicitationResult;
   solicitationConclusionText: string;
   solicitationSampleConclusion: string;
   solicitationColectTypeConclusion: string;
+
+  @IsEnum(SolicitationSampleQuality, {
+    message: "Qualidade da amostra inválida.",
+  })
   solicitationSampleQuality?: SolicitationSampleQuality;
+
   solicitationClinicAvaliation: string;
   isDeleted: boolean;
 }

@@ -26,6 +26,17 @@ const examResultTypeTranslations: Record<string, string> = {
   PCR_QUANTITATIVO: "PCR quantitativo",
 };
 
+const solicitationColectTypeConclusionTranslations: Record<string, string> = {
+  NAO_INFORMADO: "Não informado",
+  TESTE1: "Teste 1",
+  TESTE2: "Teste 2",
+};
+
+const solicitationSampleQualityTranslations: Record<string, string> = {
+  SATISFATORIA: "Satisfatória",
+  INSATISFATORIA: "Insatisfatória",
+};
+
 @Injectable()
 export class SolicitationService {
   private readonly logger = new Logger(SolicitationService.name);
@@ -185,21 +196,18 @@ export class SolicitationService {
     data: SolicitationDto,
     user?: CurrentUserType,
   ): Promise<SolicitationDto> {
-    const { solicitation, variables, solicitationUserObj, template } =
+    const { solicitation, solicitationUserObj, template } =
       await this.getAndConfigureDocumentFromSolicitation(id);
 
-    const buffer = await this.docxService.generateDocument(
-      variables,
+    const buffer = await this.generateDocumentBufferToDownload(
+      solicitation.id,
       template.fileData,
-      solicitation,
     );
 
-    const pdfBuffer = await this.docxService.convertDocxToPdf(buffer);
-
-    await this.sendEmailToDoctor(pdfBuffer, solicitationUserObj, solicitation);
+    await this.sendEmailToDoctor(buffer, solicitationUserObj, solicitation);
 
     await this.googleDriveService.uploadDocx(
-      pdfBuffer,
+      buffer,
       `relatorio_solicitacao_${solicitation.id}.pdf`,
       process.env.GOOGLE_DRIVE_FOLDER_ID,
     );
@@ -281,7 +289,6 @@ export class SolicitationService {
   }
 
   public async sendEmailToDoctor(
-    // id: string,
     documentBuffer: Buffer<ArrayBufferLike>,
     user: UserViewDto,
     solicitation: SolicitationDto,
@@ -322,18 +329,15 @@ export class SolicitationService {
   }
 
   public async sendEmailManually(solicitationId: string): Promise<void> {
-    const { solicitation, variables, solicitationUserObj, template } =
+    const { solicitation, solicitationUserObj, template } =
       await this.getAndConfigureDocumentFromSolicitation(solicitationId);
 
-    const buffer = await this.docxService.generateDocument(
-      variables,
+    const buffer = await this.generateDocumentBufferToDownload(
+      solicitationId,
       template.fileData,
-      solicitation,
     );
 
-    const pdfBuffer = await this.docxService.convertDocxToPdf(buffer);
-
-    await this.sendEmailToDoctor(pdfBuffer, solicitationUserObj, solicitation);
+    await this.sendEmailToDoctor(buffer, solicitationUserObj, solicitation);
   }
 
   private async configureFinishSolicitationEmail(
@@ -396,13 +400,17 @@ export class SolicitationService {
     const combinedExams = joinNonEmpty(examsTextFormatted);
 
     solicitation.exams = [
-      `${examResultTypeTranslations[solicitation.examResultType]}${combinedExams === "" ? "" : " para " + combinedExams}`,
+      `${examResultTypeTranslations[solicitation.examResultType]}${combinedExams === "" ? "" : " para " + combinedExams}.`,
     ];
 
-    // const sampleText = formatHumanList(samples.map((s) => s.name));
-    // const combinedSamples = joinNonEmpty(sampleText.toLowerCase());
+    const sampleText = formatHumanList(samples.map((s) => s.name));
+    const combinedSamples = joinNonEmpty(sampleText.toLowerCase());
 
-    // solicitation.samples = [combinedSamples];
+    solicitation.samples = [
+      combinedSamples === ""
+        ? ""
+        : `Amostra de ${combinedSamples} armazenada em tubo de EDTA.`,
+    ];
 
     for (const [key, variableName] of Object.entries(variables)) {
       const val = solicitation[key as keyof SolicitationDto];
