@@ -1,7 +1,7 @@
 // prisma/seed.ts
-import { hash } from "bcrypt";
-import { Role } from "@prisma/client";
-import { PrismaService } from "./prisma.service";
+import { hash } from "bcryptjs";
+import { PrismaService } from "../prisma/prisma.service";
+import { Role } from "./generated";
 
 import * as dotenv from "dotenv";
 dotenv.config();

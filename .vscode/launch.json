@@ -12,6 +12,18 @@
       "program": "${workspaceFolder}/src/user/user.controller.ts",
       "preLaunchTask": "tsc: build - tsconfig.json",
       "outFiles": ["${workspaceFolder}/dist/**/*.js"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Nest Framework",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start:debug"],
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal",
+      "restart": true,
+      "sourceMaps": true,
+      "autoAttachChildProcesses": true
     }
   ]
 }

@@ -3,7 +3,7 @@ import {
   SolicitationResult,
   SolicitationSampleQuality,
   SolicitationStatus,
-} from "@prisma/client";
+} from "../../../../prisma/generated";
 import { IsEnum } from "class-validator";
 
 interface DateRange {

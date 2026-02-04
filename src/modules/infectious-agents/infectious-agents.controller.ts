@@ -19,7 +19,7 @@ import {
   InfectiousAgentsFilterDto,
 } from "./dto/infectious-agents.dto";
 import { RolesGuard } from "../auth/guards/roles.guard";
-import { Role } from "@prisma/client";
+import { Role } from "../../../prisma/generated";
 import { Roles } from "../../common/decorators/roles.decorator";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -29,7 +29,7 @@ export class InfectiousAgentsController {
 
   @Get()
   async findAll(
-    @Query() query: PaginationQueryDto
+    @Query() query: PaginationQueryDto,
   ): Promise<SuccessResponse<InfectiousAgentsDto[]>> {
     const data = await this.service.findAll(query);
 
@@ -43,7 +43,7 @@ export class InfectiousAgentsController {
   @Get(":id")
   @Roles(Role.ADMINISTRADOR)
   async findOne(
-    @Param("id") id: string
+    @Param("id") id: string,
   ): Promise<SuccessResponse<InfectiousAgentsDto>> {
     const exam = await this.service.findOne(id);
 
@@ -58,7 +58,7 @@ export class InfectiousAgentsController {
   @Roles(Role.ADMINISTRADOR)
   async search(
     @Query() query: PaginationQueryDto,
-    @Body() filter: InfectiousAgentsFilterDto
+    @Body() filter: InfectiousAgentsFilterDto,
   ): Promise<SuccessResponse<InfectiousAgentsDto[]>> {
     const infectiouAgents = await this.service.findAll(query, filter);
 
@@ -72,7 +72,7 @@ export class InfectiousAgentsController {
   @Post()
   @Roles(Role.ADMINISTRADOR)
   async create(
-    @Body() data: InfectiousAgentsDto
+    @Body() data: InfectiousAgentsDto,
   ): Promise<SuccessResponse<InfectiousAgentsDto>> {
     const newExam = await this.service.create(data);
 
@@ -82,7 +82,7 @@ export class InfectiousAgentsController {
 
     return new SuccessResponse<InfectiousAgentsDto>(
       newExam,
-      "Agente infeccioso criado com sucesso."
+      "Agente infeccioso criado com sucesso.",
     );
   }
 
@@ -90,7 +90,7 @@ export class InfectiousAgentsController {
   @Roles(Role.ADMINISTRADOR)
   async update(
     @Param("id") id: string,
-    @Body() data: InfectiousAgentsDto
+    @Body() data: InfectiousAgentsDto,
   ): Promise<SuccessResponse<InfectiousAgentsDto>> {
     const existingExam = await this.service.findOne(id);
 
@@ -100,14 +100,14 @@ export class InfectiousAgentsController {
 
     return new SuccessResponse<InfectiousAgentsDto>(
       await this.service.update(id, data),
-      "Agente infeccioso atualizado com sucesso."
+      "Agente infeccioso atualizado com sucesso.",
     );
   }
 
   @Delete(":id")
   @Roles(Role.ADMINISTRADOR)
   async delete(
-    @Param("id") id: string
+    @Param("id") id: string,
   ): Promise<SuccessResponse<InfectiousAgentsDto>> {
     const existingExam = await this.service.findOne(id);
 
@@ -116,7 +116,7 @@ export class InfectiousAgentsController {
     }
 
     return new SuccessResponse<InfectiousAgentsDto>(
-      await this.service.delete(id)
+      await this.service.delete(id),
     );
   }
 }

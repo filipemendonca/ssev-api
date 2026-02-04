@@ -1,0 +1,167 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SolicitationResult {
+  POSITIVO
+  NEGATIVO
+  INDETERMINADO
+}
+
+enum SolicitationSampleQuality {
+  SATISFATORIA
+  INSATISFATORIA
+}
+
+enum Role {
+  ADMINISTRADOR
+  VETERINARIO
+  PATOLOGISTA
+}
+
+enum BloodCollectionTubeColor {
+  TAMPA_ROXA
+  TAMPA_VERMELHA
+  TAMPA_CINZA
+  TAMPA_AZUL
+}
+
+enum SolicitationStatus {
+  CRIADO
+  FILTRAGEM
+  EM_TRANSPORTE
+  EM_ANALISE
+  BLOQUEADO
+  FINALIZADO
+  CANCELADO
+}
+
+enum ExamResultType {
+  PCR_QUALITATIVO
+  PCR_QUANTITATIVO
+}
+
+model User {
+  id                    String                @id @default(cuid())
+  name                  String?
+  email                 String?               @unique
+  password              String?
+  isActive              Boolean               @default(true)
+  role                  Role?                 @default(VETERINARIO)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  solicitations         Solicitation[]
+  solicitationHistories SolicitationHistory[]
+  passwordResetToken    PasswordResetToken[]
+}
+
+model Sample {
+  id        String   @id @default(cuid())
+  name      String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Exams {
+  id        String   @id @default(cuid())
+  name      String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model InfectiousAgents {
+  id        String   @id @default(cuid())
+  name      String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Solicitation {
+  id                               String                     @id @default(cuid())
+  tutor                            String?
+  patient                          String?
+  gender                           String?
+  age                              String?
+  doctor                           String?
+  specie                           String?
+  hospitalVet                      String?
+  infectiousAgents                 String[]
+  samples                          String[]
+  exams                            String[]
+  status                           SolicitationStatus         @default(CRIADO)
+  finishedAt                       DateTime?
+  canceledAt                       DateTime?
+  canceledCause                    String?
+  blockedAt                        DateTime?
+  blockedCause                     String?
+  examResultType                   ExamResultType?            @default(PCR_QUALITATIVO)
+  solicitationResult               SolicitationResult?
+  solicitationConclusionText       String?
+  solicitationSampleConclusion     String?
+  solicitationColectTypeConclusion String?
+  solicitationSampleQuality        SolicitationSampleQuality?
+  solicitationClinicAvaliation     String?
+  isDeleted                        Boolean                    @default(false)
+  createdAt                        DateTime                   @default(now())
+  updatedAt                        DateTime                   @updatedAt
+  bloodCollectionTubeColor         String[]
+  userId                           String?
+  user                             User?                      @relation(fields: [userId], references: [id])
+  solicitationHistories            SolicitationHistory[]
+}
+
+model SolicitationHistory {
+  id             String              @id @default(cuid())
+  solicitationId String
+  previousStatus SolicitationStatus?
+  newStatus      SolicitationStatus
+  blockedCause   String?
+  changedAt      DateTime            @default(now())
+  changedById    String
+  changedBy      User                @relation(fields: [changedById], references: [id])
+
+  solicitation Solicitation @relation(fields: [solicitationId], references: [id])
+}
+
+model ExamResultTemplate {
+  id        String   @id @default(cuid())
+  name      String?  @unique
+  fileName  String?
+  mimeType  String?
+  fileData  Bytes?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Variables {
+  id           String   @id @default(cuid())
+  variableName String   @unique
+  tableRelated String?
+  fieldRelated String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}

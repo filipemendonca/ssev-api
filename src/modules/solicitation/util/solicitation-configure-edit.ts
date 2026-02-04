@@ -1,4 +1,4 @@
-import { Role, SolicitationStatus } from "@prisma/client";
+import { Role, SolicitationStatus } from "../../../../prisma/generated";
 
 interface SolicitationConfigureEdit {
   canEdit: boolean;
@@ -10,7 +10,7 @@ export function config({ canEdit }: SolicitationConfigureEdit) {
 
 export function validateEditSolicitation(
   userRole: Role,
-  status: SolicitationStatus
+  status: SolicitationStatus,
 ): SolicitationConfigureEdit {
   switch (status) {
     case SolicitationStatus.CRIADO:

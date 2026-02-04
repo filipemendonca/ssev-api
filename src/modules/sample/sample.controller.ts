@@ -16,7 +16,7 @@ import { SampleDto, SampleFilterDto } from "./dto/sample.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { Roles } from "../../common/decorators/roles.decorator";
-import { Role } from "@prisma/client";
+import { Role } from "../../../prisma/generated";
 import { RolesGuard } from "../auth/guards/roles.guard";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -26,7 +26,7 @@ export class SampleController {
 
   @Get()
   async findAll(
-    @Query() query: PaginationQueryDto
+    @Query() query: PaginationQueryDto,
   ): Promise<SuccessResponse<SampleDto[]>> {
     const data = await this.service.findAll(query);
 
@@ -53,7 +53,7 @@ export class SampleController {
   @Roles(Role.ADMINISTRADOR)
   async search(
     @Query() query: PaginationQueryDto,
-    @Body() filter: SampleFilterDto
+    @Body() filter: SampleFilterDto,
   ): Promise<SuccessResponse<SampleDto[]>> {
     const sample = await this.service.findAll(query, filter);
 
@@ -75,7 +75,7 @@ export class SampleController {
 
     return new SuccessResponse<SampleDto>(
       newSample,
-      "Amostra criada com sucesso."
+      "Amostra criada com sucesso.",
     );
   }
 
@@ -83,7 +83,7 @@ export class SampleController {
   @Roles(Role.ADMINISTRADOR)
   async update(
     @Param("id") id: string,
-    @Body() data: SampleDto
+    @Body() data: SampleDto,
   ): Promise<SuccessResponse<SampleDto>> {
     const existingSample = await this.service.findById(id);
 
@@ -93,7 +93,7 @@ export class SampleController {
 
     return new SuccessResponse<SampleDto>(
       await this.service.update(id, data),
-      "Amostra atualizada com sucesso."
+      "Amostra atualizada com sucesso.",
     );
   }
 

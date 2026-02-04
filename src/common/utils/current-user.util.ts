@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { Role } from "../../../prisma/generated";
 
 export interface CurrentUserType {
   id: string;

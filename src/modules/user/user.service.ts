@@ -1,5 +1,5 @@
 import { Injectable, UnprocessableEntityException } from "@nestjs/common";
-import { hash } from "bcrypt";
+import { hash } from "bcryptjs";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { UserDto, UserViewDto } from "./dto/user.dto";

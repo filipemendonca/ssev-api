@@ -24,7 +24,7 @@ import { SolicitationHistoryService } from "../solicitationHistory/solicitation.
 import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
 import { SolicitationService } from "./solicitation.service";
 import { validateEditSolicitation } from "./util/solicitation-configure-edit";
-import { SolicitationStatus } from "@prisma/client";
+import { SolicitationStatus } from "../../../prisma/generated";
 
 @UseGuards(JwtAuthGuard)
 @Controller("solicitation")

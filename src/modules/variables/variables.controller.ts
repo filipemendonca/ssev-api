@@ -10,7 +10,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { Role } from "@prisma/client";
+import { Role } from "../../../prisma/generated";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
@@ -28,7 +28,7 @@ export class VariablesController {
 
   @Get()
   async findAll(
-    @Query() query: PaginationQueryDto
+    @Query() query: PaginationQueryDto,
   ): Promise<SuccessResponse<VariablesDto[]>> {
     const data = await this.service.findAll(query);
     return data;
@@ -36,7 +36,7 @@ export class VariablesController {
 
   @Get(":id")
   async findOne(
-    @Param("id") id: string
+    @Param("id") id: string,
   ): Promise<SuccessResponse<VariablesDto>> {
     const data = await this.service.findOne(id);
 
@@ -55,7 +55,7 @@ export class VariablesController {
   @Get("dropdown/listRelatedFields")
   async listRelatedFields(): Promise<{ value: string; label: string }[]> {
     const mappedColumns = await mapColumns(
-      await this.service.listColumns("Solicitation")
+      await this.service.listColumns("Solicitation"),
     );
 
     return Object.entries(mappedColumns).map(([key, value]) => ({
@@ -66,7 +66,7 @@ export class VariablesController {
 
   @Post()
   async create(
-    @Body() data: VariablesDto
+    @Body() data: VariablesDto,
   ): Promise<SuccessResponse<VariablesDto>> {
     const newVariable = await this.service.create(data);
 
@@ -76,14 +76,14 @@ export class VariablesController {
 
     return new SuccessResponse<VariablesDto>(
       newVariable,
-      "Variável criada com sucesso."
+      "Variável criada com sucesso.",
     );
   }
 
   @Put(":id")
   async update(
     @Param("id") id: string,
-    @Body() data: VariablesDto
+    @Body() data: VariablesDto,
   ): Promise<SuccessResponse<VariablesDto>> {
     const existingData = await this.service.findOne(id);
 
@@ -93,13 +93,13 @@ export class VariablesController {
 
     return new SuccessResponse<VariablesDto>(
       await this.service.update(id, data),
-      "Variável atualizada com sucesso."
+      "Variável atualizada com sucesso.",
     );
   }
 
   @Delete(":id")
   async delete(
-    @Param("id") id: string
+    @Param("id") id: string,
   ): Promise<SuccessResponse<VariablesDto>> {
     const existingData = await this.service.findOne(id);
 

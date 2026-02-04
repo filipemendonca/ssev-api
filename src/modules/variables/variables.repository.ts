@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
-import { Prisma, Variables } from "@prisma/client";
-import { BaseRepository } from "../../common/base.repository";
-import { PrismaService } from "../../../prisma/prisma.service";
+import { Prisma, Variables } from "../../../prisma/generated";
 import { ColumnResponse } from "./util/util";
+import { PrismaService } from "../../../prisma/prisma.service";
+import { BaseRepository } from "../../common/base.repository";
 
 @Injectable()
 export class VariablesRepository extends BaseRepository<

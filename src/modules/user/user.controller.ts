@@ -17,11 +17,11 @@ import { UpdateProfileDto, UserDto, UserViewDto } from "./dto/user.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { RolesGuard } from "../auth/guards/roles.guard";
-import { Role } from "@prisma/client";
+import { Role } from "../../../prisma/generated";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { CurrentUserType } from "../../common/utils/current-user.util";
-import { hash } from "bcrypt";
+import { hash } from "bcryptjs";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("users")
@@ -31,7 +31,7 @@ export class UserController {
 
   @Get()
   async findAll(
-    @Query() query: PaginationQueryDto
+    @Query() query: PaginationQueryDto,
   ): Promise<SuccessResponse<UserViewDto[]>> {
     const data = await this.service.findAll(query, {
       id: true,
@@ -52,7 +52,7 @@ export class UserController {
 
   @Get("/profile")
   async getProfile(
-    @CurrentUser() user: CurrentUserType
+    @CurrentUser() user: CurrentUserType,
   ): Promise<SuccessResponse<UserViewDto>> {
     const data = await this.service.findOne(user.id, {
       id: true,
@@ -72,7 +72,7 @@ export class UserController {
   @Patch("/profile/:id")
   async updateProfile(
     @Param("id") id: string,
-    @Body() data: UpdateProfileDto
+    @Body() data: UpdateProfileDto,
   ): Promise<SuccessResponse<UserDto>> {
     const existingData = await this.service.findOne(id);
 
@@ -103,13 +103,13 @@ export class UserController {
 
     return new SuccessResponse<UserDto>(
       undefined,
-      "Perfíl atualizado com sucesso."
+      "Perfíl atualizado com sucesso.",
     );
   }
 
   @Get(":id")
   async findOne(
-    @Param("id") id: string
+    @Param("id") id: string,
   ): Promise<SuccessResponse<UserViewDto>> {
     const data = await this.service.findOne(id, {
       id: true,
@@ -140,7 +140,7 @@ export class UserController {
   @Put(":id")
   async update(
     @Param("id") id: string,
-    @Body() data: UserDto
+    @Body() data: UserDto,
   ): Promise<SuccessResponse<UserDto>> {
     const existingData = await this.service.findOne(id);
 
@@ -150,7 +150,7 @@ export class UserController {
 
     return new SuccessResponse<UserDto>(
       await this.service.update(id, data),
-      "Usuário atualizado com sucesso."
+      "Usuário atualizado com sucesso.",
     );
   }
 

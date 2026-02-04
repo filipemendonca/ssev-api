@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Prisma, Solicitation } from "@prisma/client";
+import { Prisma, Solicitation } from "../../../prisma/generated";
 import { BaseRepository } from "../../common/base.repository";
 import { PrismaService } from "../../../prisma/prisma.service";
 
@@ -15,7 +15,7 @@ export class SolicitationRepository extends BaseRepository<
   }
 
   async transaction<T>(
-    fn: (prisma: Prisma.TransactionClient) => Promise<T>
+    fn: (prisma: Prisma.TransactionClient) => Promise<T>,
   ): Promise<T> {
     return this.prisma.$transaction(fn);
   }

@@ -13,7 +13,7 @@ export class ExamsResultTemplateService {
 
   public async findAll(
     pagination: PaginationQueryDto,
-    filter?: ExamsResultTemplateFilterDto
+    filter?: ExamsResultTemplateFilterDto,
   ): Promise<SuccessResponse<ExamsResultTemplateDto[]>> {
     const where: any = {};
 
@@ -23,7 +23,7 @@ export class ExamsResultTemplateService {
 
     const { items, total, hasNextPage, totalPages } = await this.repo.findAll(
       pagination,
-      where
+      where,
     );
 
     return new SuccessResponse(items, null, {
@@ -44,24 +44,56 @@ export class ExamsResultTemplateService {
   }
 
   public async create(
-    data: ExamsResultTemplateDto
+    data: ExamsResultTemplateDto,
   ): Promise<ExamsResultTemplateDto> {
     const validateInputData = await this.repo.validateIfHasName(data.name);
 
     if (validateInputData !== 0) {
       throw new UnprocessableEntityException(
-        "Já existe um registro com o mesmo nome."
+        "Já existe um registro com o mesmo nome.",
       );
     }
 
-    return await this.repo.create(data);
+    // Ensure fileData is Uint8Array<ArrayBuffer>
+    let fileData: Uint8Array<ArrayBuffer> | undefined = undefined;
+    if (data.fileData) {
+      if (
+        data.fileData instanceof Uint8Array &&
+        data.fileData.buffer instanceof ArrayBuffer
+      ) {
+        fileData = new Uint8Array(data.fileData.buffer);
+      } else if (Buffer.isBuffer(data.fileData)) {
+        fileData = new Uint8Array(data.fileData.buffer as ArrayBuffer);
+      }
+    }
+
+    return await this.repo.create({
+      ...data,
+      fileData: fileData,
+    });
   }
 
   public async update(
     id: string,
-    data: ExamsResultTemplateDto
+    data: ExamsResultTemplateDto,
   ): Promise<ExamsResultTemplateDto> {
-    return await this.repo.update(id, data);
+    // Ensure fileData is Uint8Array<ArrayBuffer>
+    let fileData: Uint8Array<ArrayBuffer> | undefined = undefined;
+    if (data.fileData) {
+      if (
+        data.fileData instanceof Uint8Array &&
+        data.fileData.buffer instanceof ArrayBuffer
+      ) {
+        fileData = new Uint8Array(data.fileData.buffer);
+      } else if (Buffer.isBuffer(data.fileData)) {
+        fileData = new Uint8Array(data.fileData.buffer as ArrayBuffer);
+      }
+    }
+
+    return await this.repo.update(id, {
+      ...data,
+      fileData: fileData,
+    });
   }
 
   public async delete(id: string) {

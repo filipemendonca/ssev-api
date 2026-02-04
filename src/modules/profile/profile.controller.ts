@@ -7,7 +7,7 @@ import {
   Patch,
   UseGuards,
 } from "@nestjs/common";
-import { hash } from "bcrypt";
+import { hash } from "bcryptjs";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { CurrentUserType } from "../../common/utils/current-user.util";

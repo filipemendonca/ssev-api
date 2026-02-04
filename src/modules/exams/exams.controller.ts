@@ -10,7 +10,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { Role } from "@prisma/client";
+import { Role } from "../../../prisma/generated";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
@@ -26,7 +26,7 @@ export class ExamsController {
 
   @Get()
   async findAll(
-    @Query() query: PaginationQueryDto
+    @Query() query: PaginationQueryDto,
   ): Promise<SuccessResponse<ExamsDto[]>> {
     const data = await this.service.findAll(query);
 
@@ -53,7 +53,7 @@ export class ExamsController {
   @Roles(Role.ADMINISTRADOR)
   async search(
     @Query() query: PaginationQueryDto,
-    @Body() filter: ExamsFilterDto
+    @Body() filter: ExamsFilterDto,
   ): Promise<SuccessResponse<ExamsDto[]>> {
     const exams = await this.service.findAll(query, filter);
 
@@ -80,7 +80,7 @@ export class ExamsController {
   @Roles(Role.ADMINISTRADOR)
   async update(
     @Param("id") id: string,
-    @Body() data: ExamsDto
+    @Body() data: ExamsDto,
   ): Promise<SuccessResponse<ExamsDto>> {
     const existingExam = await this.service.findOne(id);
 
@@ -90,7 +90,7 @@ export class ExamsController {
 
     return new SuccessResponse<ExamsDto>(
       await this.service.update(id, data),
-      "Exame atualizado com sucesso."
+      "Exame atualizado com sucesso.",
     );
   }
 

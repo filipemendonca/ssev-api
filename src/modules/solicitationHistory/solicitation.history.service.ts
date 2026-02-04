@@ -1,27 +1,27 @@
 import { Injectable } from "@nestjs/common";
 import { SolicitationHistoryDto } from "./dto/solicitation.history.dto";
 import { SolicitationHistoryRepository } from "./solicitation.history.repository";
-import { SolicitationStatus } from "@prisma/client";
+import { SolicitationStatus } from "../../../prisma/generated";
 
 @Injectable()
 export class SolicitationHistoryService {
   constructor(private readonly repo: SolicitationHistoryRepository) {}
 
   public async findManyBySolicitationId(
-    solicitationId: string
+    solicitationId: string,
   ): Promise<SolicitationHistoryDto[]> {
     const where: any = {};
     where.solicitationId = solicitationId;
     const include = { changedBy: { select: { name: true } } };
     const solicitationHistories = await this.repo.findAllWithoutPagination(
       where,
-      include
+      include,
     );
     return solicitationHistories;
   }
 
   public async findLastSolicitationHistoryToUnblockSolicitation(
-    solicitationId: string
+    solicitationId: string,
   ): Promise<SolicitationHistoryDto> {
     try {
       const where: any = {};
@@ -37,7 +37,7 @@ export class SolicitationHistoryService {
   }
 
   public async findLastBySolicitationId(
-    solicitationId: string
+    solicitationId: string,
   ): Promise<SolicitationHistoryDto | null> {
     try {
       const solicitationHistory = await this.repo.findOne({
@@ -51,14 +51,14 @@ export class SolicitationHistoryService {
   }
 
   public async create(
-    data: SolicitationHistoryDto
+    data: SolicitationHistoryDto,
   ): Promise<SolicitationHistoryDto> {
     return this.repo.create(data);
   }
 
   public async update(
     id: string,
-    data: SolicitationHistoryDto
+    data: SolicitationHistoryDto,
   ): Promise<SolicitationHistoryDto> {
     return await this.repo.update(id, data);
   }

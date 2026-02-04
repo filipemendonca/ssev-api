@@ -14,11 +14,9 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express/multer";
-import { Role } from "@prisma/client";
 import { Response } from "express";
 import { memoryStorage } from "multer";
-import { existsSync, unlinkSync } from "node:fs";
-import { join } from "node:path";
+import { Role } from "../../../prisma/generated";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
@@ -37,7 +35,7 @@ export class ExamsResultTemplateController {
 
   @Get()
   async findAll(
-    @Query() query: PaginationQueryDto
+    @Query() query: PaginationQueryDto,
   ): Promise<SuccessResponse<ExamsResultTemplateDto[]>> {
     const data = await this.service.findAll(query);
 
@@ -51,7 +49,7 @@ export class ExamsResultTemplateController {
   @Get(":id")
   @Roles(Role.ADMINISTRADOR)
   async findOne(
-    @Param("id") id: string
+    @Param("id") id: string,
   ): Promise<SuccessResponse<ExamsResultTemplateDto>> {
     const template = await this.service.findOne(id);
 
@@ -66,7 +64,7 @@ export class ExamsResultTemplateController {
   @Roles(Role.ADMINISTRADOR)
   async search(
     @Query() query: PaginationQueryDto,
-    @Body() filter: ExamsResultTemplateFilterDto
+    @Body() filter: ExamsResultTemplateFilterDto,
   ): Promise<SuccessResponse<ExamsResultTemplateDto[]>> {
     const templates = await this.service.findAll(query, filter);
 
@@ -89,17 +87,17 @@ export class ExamsResultTemplateController {
         }
         cb(null, true);
       },
-    })
+    }),
   )
   async create(
     @Body() data: ExamsResultTemplateDto,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<SuccessResponse<ExamsResultTemplateDto>> {
     const existingData = await this.service.findFirst();
 
     if (existingData) {
       throw new NotFoundException(
-        `Só é permitido o cadastro de 1 template na aplicação.`
+        `Só é permitido o cadastro de 1 template na aplicação.`,
       );
     }
 
@@ -116,7 +114,7 @@ export class ExamsResultTemplateController {
 
     return new SuccessResponse<ExamsResultTemplateDto>(
       newTemplate,
-      "Template criado com sucesso."
+      "Template criado com sucesso.",
     );
   }
 
@@ -130,11 +128,11 @@ export class ExamsResultTemplateController {
 
     res.setHeader(
       "Content-Type",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     );
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${template.fileName}"`
+      `attachment; filename="${template.fileName}"`,
     );
     res.setHeader("Content-Length", template.fileData.length);
 
@@ -145,7 +143,7 @@ export class ExamsResultTemplateController {
   @Roles(Role.ADMINISTRADOR)
   async update(
     @Param("id") id: string,
-    @Body() data: ExamsResultTemplateDto
+    @Body() data: ExamsResultTemplateDto,
   ): Promise<SuccessResponse<ExamsResultTemplateDto>> {
     const existingTemplate = await this.service.findOne(id);
 
@@ -155,14 +153,14 @@ export class ExamsResultTemplateController {
 
     return new SuccessResponse<ExamsResultTemplateDto>(
       await this.service.update(id, data),
-      "Template atualizado com sucesso."
+      "Template atualizado com sucesso.",
     );
   }
 
   @Delete(":id")
   @Roles(Role.ADMINISTRADOR)
   async delete(
-    @Param("id") id: string
+    @Param("id") id: string,
   ): Promise<SuccessResponse<ExamsResultTemplateDto>> {
     const existingTemplate = await this.service.findOne(id);
 
@@ -171,7 +169,7 @@ export class ExamsResultTemplateController {
     }
 
     return new SuccessResponse<ExamsResultTemplateDto>(
-      await this.service.delete(id)
+      await this.service.delete(id),
     );
   }
 }

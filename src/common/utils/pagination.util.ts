@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "../../../prisma/generated";
 import { SuccessResponse } from "../dto/response.dto";
 
 export async function paginate<T>(
@@ -13,7 +13,7 @@ export async function paginate<T>(
     select?: any;
   },
   limit = 10,
-  currentPage = 1
+  currentPage = 1,
 ): Promise<SuccessResponse<T[]>> {
   const skip = (currentPage - 1) * limit;
   const [data, total] = await Promise.all([

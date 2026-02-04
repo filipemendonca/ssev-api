@@ -20,7 +20,7 @@ import {
 import { addMinutes } from "date-fns";
 import { PrismaService } from "../../../prisma/prisma.service";
 import { MailService } from "../../common/services/mail.service";
-import { hash } from "bcrypt";
+import { hash } from "bcryptjs";
 import { SuccessResponse } from "../../common/dto/response.dto";
 
 @Controller("auth")

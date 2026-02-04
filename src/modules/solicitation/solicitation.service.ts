@@ -1,5 +1,10 @@
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
-import { Role, SolicitationStatus } from "@prisma/client";
+import {
+  BadRequestException,
+  HttpException,
+  Injectable,
+  Logger,
+} from "@nestjs/common";
+import { Role, SolicitationStatus } from "../../../prisma/generated";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { DocxService } from "../../common/services/docx-service";
@@ -289,7 +294,7 @@ export class SolicitationService {
   }
 
   public async sendEmailToDoctor(
-    documentBuffer: Buffer<ArrayBufferLike>,
+    documentBuffer: Buffer,
     user: UserViewDto,
     solicitation: SolicitationDto,
   ): Promise<void> {
@@ -329,15 +334,20 @@ export class SolicitationService {
   }
 
   public async sendEmailManually(solicitationId: string): Promise<void> {
-    const { solicitation, solicitationUserObj, template } =
-      await this.getAndConfigureDocumentFromSolicitation(solicitationId);
+    try {
+      const { solicitation, solicitationUserObj, template } =
+        await this.getAndConfigureDocumentFromSolicitation(solicitationId);
 
-    const buffer = await this.generateDocumentBufferToDownload(
-      solicitationId,
-      template.fileData,
-    );
+      const buffer = await this.generateDocumentBufferToDownload(
+        solicitationId,
+        template.fileData,
+      );
 
-    await this.sendEmailToDoctor(buffer, solicitationUserObj, solicitation);
+      await this.sendEmailToDoctor(buffer, solicitationUserObj, solicitation);
+    } catch (error) {
+      console.error("Error sending email manually:", error);
+      throw new BadRequestException("Erro ao enviar o e-mail.");
+    }
   }
 
   private async configureFinishSolicitationEmail(
@@ -346,7 +356,7 @@ export class SolicitationService {
     patient: string,
     tutor: string,
     createdAt: Date,
-    buffer: Buffer<ArrayBufferLike>,
+    buffer: Buffer,
     isPDFFile: boolean = true,
   ) {
     await this.mailService.sendMailWithAttachment({
