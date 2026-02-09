@@ -18,7 +18,11 @@ import { UserViewDto } from "../user/dto/user.dto";
 import { UserService } from "../user/user.service";
 import { formatHumanList, joinNonEmpty } from "../variables/util/util";
 import { VariablesService } from "../variables/variables.service";
-import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
+import {
+  SolicitationDto,
+  SolicitationFilterDto,
+  SolicitationMetricsQueryDto,
+} from "./dto/solicitation.dto";
 import { SolicitationRepository } from "./solicitation.repository";
 
 const examResultTypeTranslations: Record<string, string> = {
@@ -103,6 +107,128 @@ export class SolicitationService {
 
   public async findOne(id: string): Promise<SolicitationDto | null> {
     return await this.repo.findById(id);
+  }
+
+  public async getStatusMetrics(query: SolicitationMetricsQueryDto) {
+    const { where, range } = this.buildDateRangeWhere(query);
+    const solicitations = await this.repo.findMany({
+      where,
+      select: { status: true },
+    });
+
+    const statusCounts = new Map<string, number>();
+    for (const status of Object.values(SolicitationStatus)) {
+      statusCounts.set(status, 0);
+    }
+
+    for (const solicitation of solicitations || []) {
+      if (!solicitation?.status) continue;
+      statusCounts.set(
+        solicitation.status,
+        (statusCounts.get(solicitation.status) ?? 0) + 1,
+      );
+    }
+
+    return {
+      range,
+      total: solicitations?.length ?? 0,
+      items: Array.from(statusCounts.entries()).map(([status, count]) => ({
+        status,
+        count,
+      })),
+    };
+  }
+
+  public async getExamsInfectiousMetrics(query: SolicitationMetricsQueryDto) {
+    const { where, range } = this.buildDateRangeWhere(query);
+    const solicitations = await this.repo.findMany({
+      where,
+      select: { status: true, exams: true, infectiousAgents: true },
+    });
+
+    const examIds = new Set<string>();
+    const infectiousIds = new Set<string>();
+
+    for (const solicitation of solicitations || []) {
+      for (const examId of solicitation.exams || []) {
+        if (examId) examIds.add(examId);
+      }
+      for (const infectiousId of solicitation.infectiousAgents || []) {
+        if (infectiousId) infectiousIds.add(infectiousId);
+      }
+    }
+
+    const [exams, infectiousAgents] = await Promise.all([
+      examIds.size > 0
+        ? this.examsService.findAllWithoutPagination(Array.from(examIds))
+        : Promise.resolve([]),
+      infectiousIds.size > 0
+        ? this.infectiousAgentsService.findAllWithoutPagination(
+            Array.from(infectiousIds),
+          )
+        : Promise.resolve([]),
+    ]);
+
+    const examNameById = new Map(
+      exams.map((exam) => [exam.id, exam.name ?? exam.id]),
+    );
+    const infectiousNameById = new Map(
+      infectiousAgents.map((ia) => [ia.id, ia.name ?? ia.id]),
+    );
+
+    const examCounts = new Map<string, { open: number; closed: number }>();
+    const infectiousCounts = new Map<
+      string,
+      { open: number; closed: number }
+    >();
+
+    for (const solicitation of solicitations || []) {
+      const isClosed = solicitation.status === SolicitationStatus.FINALIZADO;
+
+      for (const examId of solicitation.exams || []) {
+        const name = examNameById.get(examId) ?? examId;
+        const current = examCounts.get(name) ?? { open: 0, closed: 0 };
+        if (isClosed) {
+          current.closed += 1;
+        } else {
+          current.open += 1;
+        }
+        examCounts.set(name, current);
+      }
+
+      for (const infectiousId of solicitation.infectiousAgents || []) {
+        const name = infectiousNameById.get(infectiousId) ?? infectiousId;
+        const current = infectiousCounts.get(name) ?? { open: 0, closed: 0 };
+        if (isClosed) {
+          current.closed += 1;
+        } else {
+          current.open += 1;
+        }
+        infectiousCounts.set(name, current);
+      }
+    }
+
+    const toPercentage = (count: number, total: number) =>
+      total === 0 ? 0 : Number(((count / total) * 100).toFixed(2));
+
+    const mapCounts = (map: Map<string, { open: number; closed: number }>) =>
+      Array.from(map.entries()).map(([name, counts]) => {
+        const total = counts.open + counts.closed;
+        return {
+          name,
+          openCount: counts.open,
+          closedCount: counts.closed,
+          openPercent: toPercentage(counts.open, total),
+          closedPercent: toPercentage(counts.closed, total),
+          total,
+        };
+      });
+
+    return {
+      range,
+      exams: mapCounts(examCounts),
+      infectiousAgents: mapCounts(infectiousCounts),
+    };
   }
 
   public async create(
@@ -431,5 +557,39 @@ export class SolicitationService {
     }
 
     return data;
+  }
+
+  private buildDateRangeWhere(query: SolicitationMetricsQueryDto) {
+    const range = this.parseDateRange(query);
+    const where: any = { isDeleted: false };
+
+    if (range.from || range.to) {
+      where.createdAt = {};
+      if (range.from) where.createdAt.gte = range.from;
+      if (range.to) where.createdAt.lte = range.to;
+    }
+
+    return {
+      where,
+      range: {
+        from: range.from ? range.from.toISOString() : null,
+        to: range.to ? range.to.toISOString() : null,
+      },
+    };
+  }
+
+  private parseDateRange(query: SolicitationMetricsQueryDto) {
+    const from = query?.from ? new Date(query.from) : null;
+    const to = query?.to ? new Date(query.to) : null;
+
+    if (from && Number.isNaN(from.getTime())) {
+      throw new BadRequestException("Data inicial inválida.");
+    }
+
+    if (to && Number.isNaN(to.getTime())) {
+      throw new BadRequestException("Data final inválida.");
+    }
+
+    return { from: from ?? undefined, to: to ?? undefined };
   }
 }

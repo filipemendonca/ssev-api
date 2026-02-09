@@ -64,3 +64,8 @@ export type SolicitationFilterDto = {
   status: SolicitationStatus;
   rangeDate: DateRange;
 };
+
+export type SolicitationMetricsQueryDto = {
+  from?: string;
+  to?: string;
+};

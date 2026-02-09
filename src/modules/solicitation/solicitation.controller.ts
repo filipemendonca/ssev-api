@@ -21,7 +21,11 @@ import { CurrentUserType } from "../../common/utils/current-user.util";
 import { JwtAuthGuard } from "../auth/guards/auth.guard";
 import { ExamsResultTemplateService } from "../examsResultTemplate/exams.result.template.service";
 import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
-import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
+import {
+  SolicitationDto,
+  SolicitationFilterDto,
+  SolicitationMetricsQueryDto,
+} from "./dto/solicitation.dto";
 import { SolicitationService } from "./solicitation.service";
 import { validateEditSolicitation } from "./util/solicitation-configure-edit";
 import { SolicitationStatus } from "../../../prisma/generated";
@@ -47,6 +51,22 @@ export class SolicitationController {
     }
 
     return response;
+  }
+
+  @Get("metrics/status")
+  async getStatusMetrics(
+    @Query() query: SolicitationMetricsQueryDto,
+  ): Promise<SuccessResponse<any>> {
+    const data = await this.service.getStatusMetrics(query);
+    return new SuccessResponse(data);
+  }
+
+  @Get("metrics/exams-infectious")
+  async getExamsInfectiousMetrics(
+    @Query() query: SolicitationMetricsQueryDto,
+  ): Promise<SuccessResponse<any>> {
+    const data = await this.service.getExamsInfectiousMetrics(query);
+    return new SuccessResponse(data);
   }
 
   @Get(":id")
