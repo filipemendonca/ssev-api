@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  HttpException,
-  Injectable,
-  Logger,
-} from "@nestjs/common";
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { Role, SolicitationStatus } from "../../../prisma/generated";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
@@ -12,19 +7,19 @@ import { GoogleDriveService } from "../../common/services/google-drive.service";
 import { MailService } from "../../common/services/mail.service";
 import { CurrentUserType } from "../../common/utils/current-user.util";
 import { examReportEmailTemplate } from "../../common/utils/docx-template";
+import { ExamsService } from "../exams/exams.service";
 import { ExamsResultTemplateDto } from "../examsResultTemplate/dto/exams.result.template.dto";
 import { ExamsResultTemplateService } from "../examsResultTemplate/exams.result.template.service";
+import { InfectiousAgentsService } from "../infectious-agents/infectious-agents.service";
+import { SampleService } from "../sample/sample.service";
 import { SolicitationHistoryDto } from "../solicitationHistory/dto/solicitation.history.dto";
 import { SolicitationHistoryService } from "../solicitationHistory/solicitation.history.service";
 import { UserViewDto } from "../user/dto/user.dto";
 import { UserService } from "../user/user.service";
+import { formatHumanList, joinNonEmpty } from "../variables/util/util";
 import { VariablesService } from "../variables/variables.service";
 import { SolicitationDto, SolicitationFilterDto } from "./dto/solicitation.dto";
 import { SolicitationRepository } from "./solicitation.repository";
-import { ExamsService } from "../exams/exams.service";
-import { InfectiousAgentsService } from "../infectious-agents/infectious-agents.service";
-import { formatHumanList, joinNonEmpty } from "../variables/util/util";
-import { SampleService } from "../sample/sample.service";
 
 const examResultTypeTranslations: Record<string, string> = {
   PCR_QUALITATIVO: "PCR qualitativo",
@@ -312,25 +307,23 @@ export class SolicitationService {
     solicitationId: string,
     templateBuffer: Buffer | Uint8Array,
   ) {
-    return await this.repo.transaction<Buffer>(async (tx) => {
-      const variables = await this.variableService.findAllWithoutPagination();
-      const solicitation = await this.repo.findById(solicitationId);
+    const variables = await this.variableService.findAllWithoutPagination();
+    const solicitation = await this.repo.findById(solicitationId);
 
-      const variablesMapped = await this.mapSolicitationVariables(
-        solicitation,
-        variables,
-      );
+    const variablesMapped = await this.mapSolicitationVariables(
+      solicitation,
+      variables,
+    );
 
-      const buffer = await this.docxService.generateDocument(
-        variablesMapped,
-        templateBuffer,
-        solicitation,
-      );
+    const buffer = await this.docxService.generateDocument(
+      variablesMapped,
+      templateBuffer,
+      solicitation,
+    );
 
-      const pdfBuffer = await this.docxService.convertDocxToPdf(buffer);
+    const pdfBuffer = await this.docxService.convertDocxToPdf(buffer);
 
-      return pdfBuffer;
-    });
+    return pdfBuffer;
   }
 
   public async sendEmailManually(solicitationId: string): Promise<void> {
