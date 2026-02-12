@@ -172,7 +172,9 @@ export class SolicitationService {
     );
     const examIds = new Set<string>(allExams.map((exam) => exam.id));
     const currentCounts = this.countExamOccurrences(currentPeriodSolicitations);
-    const previousCounts = this.countExamOccurrences(previousPeriodSolicitations);
+    const previousCounts = this.countExamOccurrences(
+      previousPeriodSolicitations,
+    );
 
     for (const examId of currentCounts.keys()) {
       examIds.add(examId);
@@ -182,7 +184,10 @@ export class SolicitationService {
       examIds.add(examId);
     }
 
-    const toGrowthPercentage = (currentCount: number, previousCount: number) => {
+    const toGrowthPercentage = (
+      currentCount: number,
+      previousCount: number,
+    ) => {
       if (previousCount === 0) {
         return currentCount === 0 ? 0 : 100;
       }
@@ -216,7 +221,10 @@ export class SolicitationService {
       })
       .sort((a, b) => a.name.localeCompare(b.name));
 
-    const totalCurrent = exams.reduce((acc, item) => acc + item.currentCount, 0);
+    const totalCurrent = exams.reduce(
+      (acc, item) => acc + item.currentCount,
+      0,
+    );
     const totalPrevious = exams.reduce(
       (acc, item) => acc + item.previousCount,
       0,
@@ -344,11 +352,11 @@ export class SolicitationService {
 
     await this.sendEmailToDoctor(buffer, solicitationUserObj, solicitation);
 
-    await this.googleDriveService.uploadDocx(
-      buffer,
-      `relatorio_solicitacao_${solicitation.id}.pdf`,
-      process.env.GOOGLE_DRIVE_FOLDER_ID,
-    );
+    // await this.googleDriveService.uploadDocx(
+    //   buffer,
+    //   `relatorio_solicitacao_${solicitation.id}.pdf`,
+    //   process.env.GOOGLE_DRIVE_FOLDER_ID,
+    // );
 
     return await this.repo.transaction<SolicitationDto>(async (tx) => {
       return await this.update(id, data, user);
