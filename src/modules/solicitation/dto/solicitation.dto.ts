@@ -27,9 +27,9 @@ export class SolicitationDto {
   infectiousAgents: string[];
   samples: string[];
 
-  @IsEnum(ExamResultType, {
-    message: "Qualidade da amostra inválida.",
-  })
+  // @IsEnum(ExamResultType, {
+  //   message: "Qualidade da amostra inválida.",
+  // })
   examResultType: ExamResultType;
   exams: string[];
   canceledCause: string;
@@ -41,17 +41,17 @@ export class SolicitationDto {
   updatedAt: Date;
   blockedAt: Date;
 
-  @IsEnum(SolicitationResult, {
-    message: "Resultado da solicitação inválida.",
-  })
+  // @IsEnum(SolicitationResult, {
+  //   message: "Resultado da solicitação inválida.",
+  // })
   solicitationResult?: SolicitationResult;
   solicitationConclusionText: string;
   solicitationSampleConclusion: string;
   solicitationColectTypeConclusion: string;
 
-  @IsEnum(SolicitationSampleQuality, {
-    message: "Qualidade da amostra inválida.",
-  })
+  // @IsEnum(SolicitationSampleQuality, {
+  //   message: "Qualidade da amostra inválida.",
+  // })
   solicitationSampleQuality?: SolicitationSampleQuality;
 
   solicitationClinicAvaliation: string;

@@ -139,95 +139,107 @@ export class SolicitationService {
     };
   }
 
-  public async getExamsInfectiousMetrics(query: SolicitationMetricsQueryDto) {
-    const { where, range } = this.buildDateRangeWhere(query);
-    const solicitations = await this.repo.findMany({
-      where,
-      select: { status: true, exams: true, infectiousAgents: true },
-    });
+  public async getExamsInfectiousMetrics(query?: SolicitationMetricsQueryDto) {
+    const { current, previous } = this.buildCurrentAndPreviousRanges(query);
 
-    const examIds = new Set<string>();
-    const infectiousIds = new Set<string>();
-
-    for (const solicitation of solicitations || []) {
-      for (const examId of solicitation.exams || []) {
-        if (examId) examIds.add(examId);
-      }
-      for (const infectiousId of solicitation.infectiousAgents || []) {
-        if (infectiousId) infectiousIds.add(infectiousId);
-      }
-    }
-
-    const [exams, infectiousAgents] = await Promise.all([
-      examIds.size > 0
-        ? this.examsService.findAllWithoutPagination(Array.from(examIds))
-        : Promise.resolve([]),
-      infectiousIds.size > 0
-        ? this.infectiousAgentsService.findAllWithoutPagination(
-            Array.from(infectiousIds),
-          )
-        : Promise.resolve([]),
-    ]);
+    const [allExams, currentPeriodSolicitations, previousPeriodSolicitations] =
+      await Promise.all([
+        this.examsService.findAllWithoutPagination(),
+        this.repo.findMany({
+          where: {
+            isDeleted: false,
+            createdAt: {
+              gte: current.from,
+              lte: current.to,
+            },
+          },
+          select: { exams: true },
+        }),
+        this.repo.findMany({
+          where: {
+            isDeleted: false,
+            createdAt: {
+              gte: previous.from,
+              lte: previous.to,
+            },
+          },
+          select: { exams: true },
+        }),
+      ]);
 
     const examNameById = new Map(
-      exams.map((exam) => [exam.id, exam.name ?? exam.id]),
+      allExams.map((exam) => [exam.id, exam.name ?? exam.id]),
     );
-    const infectiousNameById = new Map(
-      infectiousAgents.map((ia) => [ia.id, ia.name ?? ia.id]),
-    );
+    const examIds = new Set<string>(allExams.map((exam) => exam.id));
+    const currentCounts = this.countExamOccurrences(currentPeriodSolicitations);
+    const previousCounts = this.countExamOccurrences(previousPeriodSolicitations);
 
-    const examCounts = new Map<string, { open: number; closed: number }>();
-    const infectiousCounts = new Map<
-      string,
-      { open: number; closed: number }
-    >();
-
-    for (const solicitation of solicitations || []) {
-      const isClosed = solicitation.status === SolicitationStatus.FINALIZADO;
-
-      for (const examId of solicitation.exams || []) {
-        const name = examNameById.get(examId) ?? examId;
-        const current = examCounts.get(name) ?? { open: 0, closed: 0 };
-        if (isClosed) {
-          current.closed += 1;
-        } else {
-          current.open += 1;
-        }
-        examCounts.set(name, current);
-      }
-
-      for (const infectiousId of solicitation.infectiousAgents || []) {
-        const name = infectiousNameById.get(infectiousId) ?? infectiousId;
-        const current = infectiousCounts.get(name) ?? { open: 0, closed: 0 };
-        if (isClosed) {
-          current.closed += 1;
-        } else {
-          current.open += 1;
-        }
-        infectiousCounts.set(name, current);
-      }
+    for (const examId of currentCounts.keys()) {
+      examIds.add(examId);
     }
 
-    const toPercentage = (count: number, total: number) =>
-      total === 0 ? 0 : Number(((count / total) * 100).toFixed(2));
+    for (const examId of previousCounts.keys()) {
+      examIds.add(examId);
+    }
 
-    const mapCounts = (map: Map<string, { open: number; closed: number }>) =>
-      Array.from(map.entries()).map(([name, counts]) => {
-        const total = counts.open + counts.closed;
+    const toGrowthPercentage = (currentCount: number, previousCount: number) => {
+      if (previousCount === 0) {
+        return currentCount === 0 ? 0 : 100;
+      }
+
+      return Number(
+        (((currentCount - previousCount) / previousCount) * 100).toFixed(2),
+      );
+    };
+
+    const exams = Array.from(examIds)
+      .map((examId) => {
+        const currentCount = currentCounts.get(examId) ?? 0;
+        const previousCount = previousCounts.get(examId) ?? 0;
+        const growthPercent = toGrowthPercentage(currentCount, previousCount);
+        let trend = "estavel";
+
+        if (growthPercent > 0) {
+          trend = "crescimento";
+        } else if (growthPercent < 0) {
+          trend = "decrescimento";
+        }
+
         return {
-          name,
-          openCount: counts.open,
-          closedCount: counts.closed,
-          openPercent: toPercentage(counts.open, total),
-          closedPercent: toPercentage(counts.closed, total),
-          total,
+          examId,
+          name: examNameById.get(examId) ?? examId,
+          currentCount,
+          previousCount,
+          growthPercent,
+          trend,
         };
-      });
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const totalCurrent = exams.reduce((acc, item) => acc + item.currentCount, 0);
+    const totalPrevious = exams.reduce(
+      (acc, item) => acc + item.previousCount,
+      0,
+    );
+    const totalGrowthPercent = toGrowthPercentage(totalCurrent, totalPrevious);
 
     return {
-      range,
-      exams: mapCounts(examCounts),
-      infectiousAgents: mapCounts(infectiousCounts),
+      range: {
+        current: {
+          from: current.from.toISOString(),
+          to: current.to.toISOString(),
+        },
+        previous: {
+          from: previous.from.toISOString(),
+          to: previous.to.toISOString(),
+        },
+      },
+      totals: {
+        currentCount: totalCurrent,
+        previousCount: totalPrevious,
+        growthPercent: totalGrowthPercent,
+      },
+      exams,
     };
   }
 
@@ -557,6 +569,90 @@ export class SolicitationService {
     }
 
     return data;
+  }
+
+  private countExamOccurrences(
+    solicitations: Array<{ exams?: string[] }>,
+  ): Map<string, number> {
+    const counts = new Map<string, number>();
+
+    for (const solicitation of solicitations || []) {
+      for (const examId of solicitation.exams || []) {
+        if (!examId) continue;
+        counts.set(examId, (counts.get(examId) ?? 0) + 1);
+      }
+    }
+
+    return counts;
+  }
+
+  private buildCurrentAndPreviousRanges(query?: SolicitationMetricsQueryDto) {
+    const now = new Date();
+    let currentFrom: Date;
+    let currentTo: Date;
+
+    if (query?.from && query?.to) {
+      currentFrom = new Date(query.from);
+      currentTo = new Date(query.to);
+
+      if (
+        Number.isNaN(currentFrom.getTime()) ||
+        Number.isNaN(currentTo.getTime())
+      ) {
+        throw new BadRequestException("Intervalo de datas inválido.");
+      }
+
+      currentFrom.setHours(0, 0, 0, 0);
+      currentTo.setHours(23, 59, 59, 999);
+    } else {
+      currentFrom = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      currentTo = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        23,
+        59,
+        59,
+        999,
+      );
+    }
+
+    if (currentFrom.getTime() > currentTo.getTime()) {
+      throw new BadRequestException(
+        "Data inicial não pode ser maior que data final.",
+      );
+    }
+
+    const toPreviousMonth = (date: Date) => {
+      const moved = new Date(date);
+      const originalDay = moved.getDate();
+      moved.setDate(1);
+      moved.setMonth(moved.getMonth() - 1);
+      const lastDayPreviousMonth = new Date(
+        moved.getFullYear(),
+        moved.getMonth() + 1,
+        0,
+      ).getDate();
+      moved.setDate(Math.min(originalDay, lastDayPreviousMonth));
+      return moved;
+    };
+
+    const previousFrom = toPreviousMonth(currentFrom);
+    previousFrom.setHours(0, 0, 0, 0);
+
+    const previousTo = toPreviousMonth(currentTo);
+    previousTo.setHours(23, 59, 59, 999);
+
+    return {
+      current: {
+        from: currentFrom,
+        to: currentTo,
+      },
+      previous: {
+        from: previousFrom,
+        to: previousTo,
+      },
+    };
   }
 
   private buildDateRangeWhere(query: SolicitationMetricsQueryDto) {
