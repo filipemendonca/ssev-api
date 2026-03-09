@@ -344,6 +344,15 @@ export class SolicitationService {
     data: SolicitationDto,
     user?: CurrentUserType,
   ): Promise<SolicitationDto> {
+
+    const solicitaionChanged = await this.repo.transaction<SolicitationDto>(async (tx) => {
+      return await this.update(id, data, user);
+    });
+    
+    if (!solicitaionChanged) {
+      throw new BadRequestException("Erro ao finalizar a solicitação.");
+    }
+
     const { solicitation, solicitationUserObj, template } =
       await this.getAndConfigureDocumentFromSolicitation(id);
 
@@ -365,9 +374,7 @@ export class SolicitationService {
       `relatorio_solicitacao_${solicitation.id}.pdf`      
     );
 
-    return await this.repo.transaction<SolicitationDto>(async (tx) => {
-      return await this.update(id, data, user);
-    });
+    return solicitaionChanged;
   }
 
   public async delete(id: string) {
