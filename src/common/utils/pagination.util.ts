@@ -1,4 +1,4 @@
-import { Prisma } from "../../../prisma/generated";
+import { Prisma } from "../../../generated/prisma";
 import { SuccessResponse } from "../dto/response.dto";
 
 export async function paginate<T>(

@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from "../../prisma/generated";
+import { Prisma, PrismaClient } from "../../generated/prisma";
 import { PaginationQueryDto } from "./dto/pagination-query.dto";
 import { BadRequestException } from "@nestjs/common";
 

@@ -16,7 +16,7 @@ import { SampleDto, SampleFilterDto } from "./dto/sample.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { Roles } from "../../common/decorators/roles.decorator";
-import { Role } from "../../../prisma/generated";
+import { Role } from "../../../generated/prisma";
 import { RolesGuard } from "../auth/guards/roles.guard";
 
 @UseGuards(JwtAuthGuard, RolesGuard)

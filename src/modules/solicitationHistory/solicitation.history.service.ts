@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { SolicitationHistoryDto } from "./dto/solicitation.history.dto";
 import { SolicitationHistoryRepository } from "./solicitation.history.repository";
-import { SolicitationStatus } from "../../../prisma/generated";
+import { SolicitationStatus } from "../../../generated/prisma";
 
 @Injectable()
 export class SolicitationHistoryService {

@@ -1,4 +1,4 @@
-import { SolicitationStatus } from "../../../../prisma/generated";
+import { SolicitationStatus } from "../../../../generated/prisma";
 
 interface ChangedBy {
   name: string;

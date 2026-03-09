@@ -1,4 +1,4 @@
-import { Role, SolicitationStatus } from "../../../../prisma/generated";
+import { Role, SolicitationStatus } from "../../../../generated/prisma";
 
 interface SolicitationConfigureEdit {
   canEdit: boolean;

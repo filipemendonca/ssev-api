@@ -19,7 +19,7 @@ import {
   InfectiousAgentsFilterDto,
 } from "./dto/infectious-agents.dto";
 import { RolesGuard } from "../auth/guards/roles.guard";
-import { Role } from "../../../prisma/generated";
+import { Role } from "../../../generated/prisma";
 import { Roles } from "../../common/decorators/roles.decorator";
 
 @UseGuards(JwtAuthGuard, RolesGuard)

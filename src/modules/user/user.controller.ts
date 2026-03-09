@@ -17,7 +17,7 @@ import { UpdateProfileDto, UserDto, UserViewDto } from "./dto/user.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { RolesGuard } from "../auth/guards/roles.guard";
-import { Role } from "../../../prisma/generated";
+import { Role } from "../../../generated/prisma";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { CurrentUserType } from "../../common/utils/current-user.util";

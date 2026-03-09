@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
-import { Role, SolicitationStatus } from "../../../prisma/generated";
+import { Role, SolicitationStatus } from "../../../generated/prisma";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 import { SuccessResponse } from "../../common/dto/response.dto";
 import { DocxService } from "../../common/services/docx-service";
