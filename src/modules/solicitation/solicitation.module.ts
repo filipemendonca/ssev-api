@@ -21,6 +21,7 @@ import { InfectiousAgentsRepository } from "../infectious-agents/infectious-agen
 import { InfectiousAgentsService } from "../infectious-agents/infectious-agents.service";
 import { SampleRepository } from "../sample/sample.repository";
 import { SampleService } from "../sample/sample.service";
+import { DropboxOAuthService } from "../../common/dropbox-oauth.service";
 
 @Module({
   providers: [
@@ -45,6 +46,7 @@ import { SampleService } from "../sample/sample.service";
     PrismaService,
     GoogleDriveService,
     GoogleOAuthService,
+    DropboxOAuthService,
   ],
   controllers: [SolicitationController],
 })

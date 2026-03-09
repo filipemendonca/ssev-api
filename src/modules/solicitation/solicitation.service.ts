@@ -24,6 +24,7 @@ import {
   SolicitationMetricsQueryDto,
 } from "./dto/solicitation.dto";
 import { SolicitationRepository } from "./solicitation.repository";
+import { DropboxOAuthService } from "../../common/dropbox-oauth.service";
 
 const examResultTypeTranslations: Record<string, string> = {
   PCR_QUALITATIVO: "PCR qualitativo",
@@ -57,6 +58,7 @@ export class SolicitationService {
     private readonly infectiousAgentsService: InfectiousAgentsService,
     private readonly sampleService: SampleService,
     private readonly googleDriveService: GoogleDriveService,
+    private readonly dropboxOAuth: DropboxOAuthService,
   ) {}
 
   public async findAll(
@@ -357,6 +359,11 @@ export class SolicitationService {
     //   `relatorio_solicitacao_${solicitation.id}.pdf`,
     //   process.env.GOOGLE_DRIVE_FOLDER_ID,
     // );
+
+    await this.dropboxOAuth.uploadSolicitation(
+      buffer,
+      `relatorio_solicitacao_${solicitation.id}.pdf`      
+    );
 
     return await this.repo.transaction<SolicitationDto>(async (tx) => {
       return await this.update(id, data, user);

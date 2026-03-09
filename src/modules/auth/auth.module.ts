@@ -11,6 +11,8 @@ import { PrismaService } from "../../../prisma/prisma.service";
 import { GoogleAuthController } from "../googleOAuth/google.auth.controller";
 import { GoogleOAuthService } from "../../common/services/google-oauth.service";
 import { MailService } from "../../common/services/mail.service";
+import { DropboxOAuthController } from "../dropbox-oauth/dropbox.oauth.controller";
+import { DropboxOAuthService } from "../../common/dropbox-oauth.service";
 
 @Module({
   imports: [
@@ -29,8 +31,9 @@ import { MailService } from "../../common/services/mail.service";
     PrismaService,
     MailService,
     GoogleOAuthService,
+    DropboxOAuthService,
   ],
-  controllers: [AuthController, GoogleAuthController],
+  controllers: [AuthController, GoogleAuthController, DropboxOAuthController],
   exports: [AuthService],
 })
 export class AuthModule {}

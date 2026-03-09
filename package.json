@@ -1,6 +1,6 @@
 {
   "name": "ssev-api",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "",
   "author": "",
   "private": true,
@@ -39,6 +39,7 @@
     "date-fns": "^4.1.0",
     "docxtemplater": "^3.67.6",
     "dotenv": "^16.5.0",
+    "dropbox": "^10.34.0",
     "google-auth-library": "^10.5.0",
     "googleapis": "^169.0.0",
     "jszip": "^3.10.1",
