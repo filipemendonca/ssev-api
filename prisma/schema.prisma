@@ -166,3 +166,9 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 }
 
+model Configurations {
+  id        String   @id @default(cuid())
+  dropboxRefresToken String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt    
+}

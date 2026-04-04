@@ -1,8 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { Dropbox, DropboxAuth } from "dropbox";
 
 @Injectable()
 export class DropboxOAuthService {
+  private readonly logger = new Logger(DropboxOAuthService.name);
   private readonly appKey: string;
   private readonly appSecret: string;
   private readonly redirectUri: string;
@@ -52,33 +53,48 @@ export class DropboxOAuthService {
     fileName: string,
     folderPath = "/solicitacoes",
     refreshToken = process.env.DROPBOX_REFRESH_TOKEN || "",
-  ) {
-    const safeFolderPath = this.normalizeFolderPath(folderPath);
-    const safeFileName = this.normalizeFileName(fileName);
-    const filePath = `${safeFolderPath}/${safeFileName}`;
+  ): Promise<{ id: string; name: string; pathDisplay: string; pathLower: string; rev: string } | null> {
+    try {
+      const safeFolderPath = this.normalizeFolderPath(folderPath);
+      const safeFileName = this.normalizeFileName(fileName);
+      const filePath = `${safeFolderPath}/${safeFileName}`;
 
-    const client = this.getClient(refreshToken);
-    const uploadResponse = await client.filesUpload({
-      path: filePath,
-      contents: buffer,
-      mode: { ".tag": "overwrite" },
-      autorename: false,
-      mute: true,
-    });
+      const client = await this.getClient(refreshToken);
+      const uploadResponse = await client.filesUpload({
+        path: filePath,
+        contents: buffer,
+        mode: { ".tag": "overwrite" },
+        autorename: false,
+        mute: true,
+      });
 
-    return {
-      id: uploadResponse.result.id,
-      name: uploadResponse.result.name,
-      pathDisplay: uploadResponse.result.path_display,
-      pathLower: uploadResponse.result.path_lower,
-      rev: uploadResponse.result.rev,
-    };
+      return {
+        id: uploadResponse.result.id,
+        name: uploadResponse.result.name,
+        pathDisplay: uploadResponse.result.path_display,
+        pathLower: uploadResponse.result.path_lower,
+        rev: uploadResponse.result.rev,
+      };
+    } catch (error: any) {
+      const message =
+        error?.error?.error_description ??
+        error?.message ??
+        "Erro ao enviar arquivo para o Dropbox.";
+      this.logger.warn(
+        `Dropbox upload failed (solicitação finalizada normalmente): ${message}`,
+      );
+      if (error?.error?.error === "invalid_grant") {
+        this.logger.warn(
+          "Token do Dropbox expirado ou revogado. Reautorize em /auth/dropbox.",
+        );
+      }
+      return null;
+    }
   }
 
-  private getClient(refreshToken: string) {
+  private async getClient(refreshToken: string) {
     const auth = this.buildAuthClient(refreshToken);
-    auth.checkAndRefreshAccessToken();
-
+    await Promise.resolve(auth.checkAndRefreshAccessToken());
     return new Dropbox({ auth });
   }
 

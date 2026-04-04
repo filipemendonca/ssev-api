@@ -12,7 +12,9 @@ import { GoogleAuthController } from "../googleOAuth/google.auth.controller";
 import { GoogleOAuthService } from "../../common/services/google-oauth.service";
 import { MailService } from "../../common/services/mail.service";
 import { DropboxOAuthController } from "../dropbox-oauth/dropbox.oauth.controller";
-import { DropboxOAuthService } from "../../common/dropbox-oauth.service";
+import { DropboxOAuthService } from "../../common/services/dropbox-oauth.service";
+import { ConfigurationsService } from "../configurations/configurations.service";
+import { ConfigurationsRepository } from "../configurations/configurations.repository";
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { DropboxOAuthService } from "../../common/dropbox-oauth.service";
     MailService,
     GoogleOAuthService,
     DropboxOAuthService,
+    ConfigurationsService,
+    ConfigurationsRepository,
   ],
   controllers: [AuthController, GoogleAuthController, DropboxOAuthController],
   exports: [AuthService],

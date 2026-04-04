@@ -9,7 +9,7 @@ import {
   Res,
 } from "@nestjs/common";
 import { Response } from "express";
-import { DropboxOAuthService } from "../../common/dropbox-oauth.service";
+import { DropboxOAuthService } from "../../common/services/dropbox-oauth.service";
 
 @Controller("auth/dropbox")
 export class DropboxOAuthController {
@@ -77,6 +77,14 @@ export class DropboxOAuthController {
       fileName,
       folderPath,
     );
+
+    if (!file) {
+      return {
+        message:
+          "Upload para o Dropbox falhou (verifique o token). A solicitação foi processada.",
+        file: null,
+      };
+    }
 
     return {
       message: "Solicitação salva no Dropbox com sucesso.",

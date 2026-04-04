@@ -223,6 +223,13 @@ exports.Prisma.PasswordResetTokenScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.ConfigurationsScalarFieldEnum = {
+  id: 'id',
+  dropboxRefresToken: 'dropboxRefresToken',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -278,7 +285,8 @@ exports.Prisma.ModelName = {
   SolicitationHistory: 'SolicitationHistory',
   ExamResultTemplate: 'ExamResultTemplate',
   Variables: 'Variables',
-  PasswordResetToken: 'PasswordResetToken'
+  PasswordResetToken: 'PasswordResetToken',
+  Configurations: 'Configurations'
 };
 
 /**

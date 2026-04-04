@@ -173,14 +173,14 @@ export class SolicitationController {
     @Body() cause: Pick<SolicitationDto, "blockedCause">,
     @CurrentUser() user: CurrentUserType,
   ): Promise<SuccessResponse<SolicitationDto>> {
-    let existingData = await this.service.findOne(id);
+    let solicitation = await this.service.findOne(id);
 
     const lastHistory =
       await this.solicitationHistoryService.findLastSolicitationHistoryToUnblockSolicitation(
         id,
       );
 
-    if (!existingData && !lastHistory) {
+    if (!solicitation && !lastHistory) {
       throw new NotFoundException(`Solicitação não encontrada.`);
     }
 
@@ -189,7 +189,7 @@ export class SolicitationController {
         id,
         cause,
         user,
-        existingData,
+        solicitation,
         lastHistory,
       ),
       "Solicitação bloqueada com sucesso.",

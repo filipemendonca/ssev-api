@@ -24,7 +24,7 @@ import {
   SolicitationMetricsQueryDto,
 } from "./dto/solicitation.dto";
 import { SolicitationRepository } from "./solicitation.repository";
-import { DropboxOAuthService } from "../../common/dropbox-oauth.service";
+import { DropboxOAuthService } from "../../common/services/dropbox-oauth.service";
 
 const examResultTypeTranslations: Record<string, string> = {
   PCR_QUALITATIVO: "PCR qualitativo",
@@ -361,7 +361,7 @@ export class SolicitationService {
       template.fileData,
     );
 
-    await this.sendEmailToDoctor(buffer, solicitationUserObj, solicitation);
+    // await this.sendEmailToDoctor(buffer, solicitationUserObj, solicitation);
 
     // await this.googleDriveService.uploadDocx(
     //   buffer,
@@ -369,10 +369,10 @@ export class SolicitationService {
     //   process.env.GOOGLE_DRIVE_FOLDER_ID,
     // );
 
-    await this.dropboxOAuth.uploadSolicitation(
-      buffer,
-      `relatorio_solicitacao_${solicitation.id}.pdf`      
-    );
+    // await this.dropboxOAuth.uploadSolicitation(
+    //   buffer,
+    //   `relatorio_solicitacao_${solicitation.id}.pdf`      
+    // );
 
     return solicitaionChanged;
   }

@@ -10,6 +10,7 @@ import { ExamsResultTemplateModule } from "./modules/examsResultTemplate/exams.r
 import { VariablesModule } from "./modules/variables/variables.module";
 import { PrismaService } from "../prisma/prisma.service";
 import { ProfileModule } from "./modules/profile/profile.module";
+import { ConfigurationsModule } from "./modules/configurations/configurations.module";
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ProfileModule } from "./modules/profile/profile.module";
     SolicitationHistoryModule,
     ExamsResultTemplateModule,
     VariablesModule,
+    ConfigurationsModule
   ],
   providers: [PrismaService],
 })
